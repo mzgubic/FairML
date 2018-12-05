@@ -25,14 +25,13 @@ def MINE(x_in, y_in, name, H=10, deep=False):
         T_xy = output[:N_batch]
         T_x_y = output[N_batch:]
 
-        # compute the loss
-        neg_loss = - (tf.reduce_mean(T_xy, axis=0) - tf.math.log(tf.reduce_mean(tf.math.exp(T_x_y), axis=0)))
-
-        # optimisation step
-        opt = tf.train.AdamOptimizer(learning_rate=0.01).minimize(neg_loss)
-
     # get the variables
     tf_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=name)
 
-    return neg_loss, opt, tf_vars
+    return T_xy, T_x_y, tf_vars
 
+def MINE_loss(T_xy, T_x_y):
+    
+    # compute the loss
+    neg_loss = - (tf.reduce_mean(T_xy, axis=0) - tf.math.log(tf.reduce_mean(tf.math.exp(T_x_y), axis=0)))
+    return neg_loss
