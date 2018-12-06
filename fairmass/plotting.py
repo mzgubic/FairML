@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve
 
-def plot_classifier_performance(x_in, y_in, clf_output, generate, sess):
+def plot_classifier_performance(x_in, y_in, clf_output, generate, sess, text='classifier'):
         
     def sigmoid(x):
         return 1 / (1 + np.e**(-x))
@@ -67,7 +67,7 @@ def plot_classifier_performance(x_in, y_in, clf_output, generate, sess):
     ax[0,1].set_ylabel('x2')
     plt.colorbar(dec, ax=ax[0,1])
     fig.show()
-    plt.savefig('classifier.pdf')
+    plt.savefig('{}.pdf'.format(text))
 
 
 def plot_toy_variates(X, Y, Z):
