@@ -5,6 +5,13 @@ import tensorflow.contrib.layers as layers
 
 def MINE(x_in, y_in, name, H=10, deep=False):
 
+    # reshape the tensor to correct shape [if (100, ) reshape to (100, 1)]
+    try:
+        d1 = y_in.get_shape().as_list()[1]
+    except IndexError:
+        d0 = y_in.get_shape().as_list()[0]
+        y_in = tf.reshape(y_in, shape=(d0, 1))
+    
     # use scoped names 
     with tf.variable_scope(name):
 
