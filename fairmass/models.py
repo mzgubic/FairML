@@ -35,3 +35,28 @@ def MINE_loss(T_xy, T_x_y):
     # compute the loss
     neg_loss = - (tf.reduce_mean(T_xy, axis=0) - tf.math.log(tf.reduce_mean(tf.math.exp(T_x_y), axis=0)))
     return neg_loss
+
+
+def classifier(x_in, name):
+    
+    with tf.variable_scope(name):
+        
+        # define the output of the network
+        dense1 = layers.relu(x_in, 20)
+        dense2 = layers.relu(dense1, 20)
+        output = layers.linear(dense2, 1)
+
+    these_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=name)
+    
+    return output, these_vars
+
+def classifier_loss(clf_output, y_in):
+    
+    # determine the number of samples
+    n_samples = y_in.get_shape().as_list()[0]
+
+    # define the loss and optimisation steps
+    y_shaped = tf.reshape(y_in, shape=(n_samples, 1))
+    loss_D = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=y_shaped, logits=clf_output))
+    
+    return loss_D
