@@ -36,8 +36,8 @@ def MINE(x_in, y_in, name, H=10, deep=False):
 def MINE_loss(T_xy, T_x_y):
     
     # compute the loss
-    neg_loss = - (tf.reduce_mean(T_xy, axis=0) - tf.math.log(tf.reduce_mean(tf.math.exp(T_x_y), axis=0)))
-    return neg_loss
+    loss = - (tf.reduce_mean(T_xy, axis=0) - tf.math.log(tf.reduce_mean(tf.math.exp(T_x_y), axis=0)))
+    return loss
 
 
 def classifier(x_in, name):
@@ -88,7 +88,7 @@ def adversary_gaussmix(clf_output, n_components, name):
     return output, these_vars
 
 
-def loss_adversary_gaussmix(z_in, adv_output, n_components):
+def adversary_gaussmix_loss(z_in, adv_output, n_components):
     
     # build the pdf (max likelihood principle)
     mu = adv_output[:, :n_components]
