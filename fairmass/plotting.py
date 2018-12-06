@@ -1,3 +1,4 @@
+import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve
@@ -8,7 +9,7 @@ def plot_classifier_performance(x_in, y_in, clf_output, generate, sess):
         return 1 / (1 + np.e**(-x))
 
     # predict on special values of Z
-    n_samples = 10000
+    n_samples = x_in.get_shape().as_list()[0]
     X, Y, Z = generate(n_samples)
     X1, Y1, Z1 = generate(n_samples, z=1)
     X0, Y0, Z0 = generate(n_samples, z=0)
