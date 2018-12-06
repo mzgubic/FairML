@@ -1,5 +1,7 @@
+import numpy as np
 import tensorflow as tf
 import tensorflow.contrib.layers as layers
+
 
 def MINE(x_in, y_in, name, H=10, deep=False):
 
@@ -30,6 +32,7 @@ def MINE(x_in, y_in, name, H=10, deep=False):
 
     return T_xy, T_x_y, tf_vars
 
+
 def MINE_loss(T_xy, T_x_y):
     
     # compute the loss
@@ -50,6 +53,7 @@ def classifier(x_in, name):
     
     return output, these_vars
 
+
 def classifier_loss(clf_output, y_in):
     
     # determine the number of samples
@@ -60,3 +64,44 @@ def classifier_loss(clf_output, y_in):
     loss_D = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=y_shaped, logits=clf_output))
     
     return loss_D
+
+
+def adversary_gaussmix(clf_output, n_components, name):
+    
+    with tf.variable_scope(name):
+        
+        # define the output of a network (depends on number of components)
+        dense1 = layers.relu(clf_output, 20)
+        dense2 = layers.relu(dense1, 20)
+        output_noact = layers.linear(dense2, 3*n_components)
+        
+        # make sure sigmas are positive and pis are normalised 
+        mu = output_noact[:, :n_components]
+        sigma = tf.exp(output_noact[:, n_components:2*n_components])
+        pi = tf.nn.softmax(output_noact[:, 2*n_components:])
+        
+        # and merge them together again
+        output = tf.concat([mu, sigma, pi], axis=1)
+    
+    these_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=name)
+    
+    return output, these_vars
+
+
+def loss_adversary_gaussmix(z_in, adv_output, n_components):
+    
+    # build the pdf (max likelihood principle)
+    mu = adv_output[:, :n_components]
+    sigma = adv_output[:, n_components:2*n_components]
+    pi = adv_output[:, 2*n_components:]
+    
+    pdf = 0
+    for c in range(n_components):
+        pdf += pi[:, c] * ((1. / np.sqrt(2. * np.pi)) / sigma[:, c] *
+                tf.math.exp(-(z_in - mu[:, c]) ** 2 / (2. * sigma[:, c] ** 2)))
+            
+    # make the loss
+    nll = - tf.math.log(pdf)
+    loss_R = tf.reduce_mean(nll)
+    
+    return loss_R
