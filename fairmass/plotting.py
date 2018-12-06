@@ -69,3 +69,16 @@ def plot_classifier_performance(x_in, y_in, clf_output, generate, sess):
     fig.show()
     plt.savefig('classifier.pdf')
 
+
+def plot_toy_variates(X, Y, Z):
+    n_samples = X.shape[0]
+    fig, ax = plt.subplots(figsize=(5,5))
+    ax.scatter(X[Y==0,0], X[Y==0,1], marker='o', color='k', alpha=0.2, label='Y=0')
+    ax.scatter(X[Y==1,0], X[Y==1,1], marker='x', c=Z[n_samples//2:], alpha=0.4, cmap='Reds', label='Y=1')
+    ax.set_ylim(-5, 5)
+    ax.set_xlim(-5, 5)
+    ax.set_xlabel('x1')
+    ax.set_ylabel('x2')
+    leg = ax.legend(loc='best')
+    leg.legendHandles[1].set_color('red')
+    fig.show()
