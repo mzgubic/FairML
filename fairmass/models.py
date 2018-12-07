@@ -6,11 +6,8 @@ import tensorflow.contrib.layers as layers
 def MINE(x_in, y_in, name, H=10, deep=False):
 
     # reshape the tensor to correct shape [if (100, ) reshape to (100, 1)]
-    try:
-        d1 = y_in.get_shape().as_list()[1]
-    except IndexError:
-        d0 = y_in.get_shape().as_list()[0]
-        y_in = tf.reshape(y_in, shape=(d0, 1))
+    n_samples = tf.shape(y_in)[0]
+    y_in = tf.reshape(y_in, shape=(n_samples, 1))
     
     # use scoped names 
     with tf.variable_scope(name):
@@ -63,10 +60,8 @@ def classifier(x_in, name):
 
 def classifier_loss(clf_output, y_in):
     
-    # determine the number of samples
-    n_samples = y_in.get_shape().as_list()[0]
-
-    # define the loss and optimisation steps
+    # define the loss 
+    n_samples = tf.shape(y_in)[0]
     y_shaped = tf.reshape(y_in, shape=(n_samples, 1))
     loss_D = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=y_shaped, logits=clf_output))
     

@@ -9,10 +9,10 @@ def sigmoid(x):
     return 1 / (1 + np.e**(-x))
 
 
-def plot_classifier_performance(x_in, y_in, clf_output, generate, sess, pname='Clf_perf.pdf'):
+def plot_classifier_performance(x_in, y_in, clf_output, generate, sess, pname='Clf_perf.pdf', batch=False):
         
     # predict on special values of Z
-    n_samples = x_in.get_shape().as_list()[0]
+    n_samples = 10000
     X, Y, Z = generate(n_samples)
     X1, Y1, Z1 = generate(n_samples, z=1)
     X0, Y0, Z0 = generate(n_samples, z=0)
@@ -69,12 +69,14 @@ def plot_classifier_performance(x_in, y_in, clf_output, generate, sess, pname='C
     ax[0,1].set_xlabel('x1')
     ax[0,1].set_ylabel('x2')
     plt.colorbar(dec, ax=ax[0,1])
-    fig.show()
+
+    if not batch:
+        plt.show()
     plt.savefig(pname)
     plt.close(fig)
 
 
-def plot_Z_density(Z, fX, NLLs, n_adv_cycles, n_curves=3, pname='Z_density.pdf'):
+def plot_Z_density(Z, fX, NLLs, n_adv_cycles, n_curves=3, pname='Z_density.pdf', batch=False):
     # make the cuts
     boundaries = np.linspace(0, 1, n_curves+1)
     upper = np.array(boundaries[1:])
@@ -110,6 +112,9 @@ def plot_Z_density(Z, fX, NLLs, n_adv_cycles, n_curves=3, pname='Z_density.pdf')
     ax[1].set_xlim(-4,4)
     ax[1].set_ylim(0,0.7)
     ax[1].legend(loc='best')
+
+    if not batch:
+        plt.show()
     plt.savefig(pname)
     plt.close(fig)
 
