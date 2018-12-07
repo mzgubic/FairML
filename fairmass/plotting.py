@@ -5,22 +5,16 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve
 from sklearn.neighbors import KernelDensity
 
-def sigmoid(x):
-    return 1 / (1 + np.e**(-x))
 
-
-def plot_classifier_performance(x_in, y_in, clf_output, generate, sess, pname='Clf_perf.pdf', batch=False):
+def plot_classifier_performance(data, pname='Clf_perf.pdf', batch=False):
         
     # predict on special values of Z
     n_samples = 10000
-    X, Y, Z = generate(n_samples)
-    X1, Y1, Z1 = generate(n_samples, z=1)
-    X0, Y0, Z0 = generate(n_samples, z=0)
-    X_1, Y_1, Z_1 = generate(n_samples, z=-1)
-    pred = sigmoid(sess.run(clf_output, feed_dict={x_in:X, y_in:Y}))
-    pred1 = sigmoid(sess.run(clf_output, feed_dict={x_in:X1, y_in:Y1}))
-    pred0 = sigmoid(sess.run(clf_output, feed_dict={x_in:X0, y_in:Y0}))
-    pred_1 = sigmoid(sess.run(clf_output, feed_dict={x_in:X_1, y_in:Y_1}))
+    X, Y, Z = data['all Z']
+    X1, Y1, Z1 = data['Z=1']
+    X0, Y0, Z0 = data['Z=0'] 
+    X_1, Y_1, Z_1 = data['Z=-1']
+    pred, pred1, pred0, pred_1 = data['preds']
     
     # define figure (plot grid)
     fig, ax = plt.subplots(2, 2, figsize=(10, 10))
@@ -70,9 +64,9 @@ def plot_classifier_performance(x_in, y_in, clf_output, generate, sess, pname='C
     ax[0,1].set_ylabel('x2')
     plt.colorbar(dec, ax=ax[0,1])
 
+    plt.savefig(pname)
     if not batch:
         plt.show()
-    plt.savefig(pname)
     plt.close(fig)
 
 
@@ -113,9 +107,9 @@ def plot_Z_density(Z, fX, NLLs, n_adv_cycles, n_curves=3, pname='Z_density.pdf',
     ax[1].set_ylim(0,0.7)
     ax[1].legend(loc='best')
 
+    plt.savefig(pname)
     if not batch:
         plt.show()
-    plt.savefig(pname)
     plt.close(fig)
 
 
