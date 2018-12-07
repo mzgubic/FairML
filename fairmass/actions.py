@@ -44,8 +44,10 @@ def train_adversarially(sess, losses, opts, inputs, generate, n_samples, n_adv_c
 
     for e in range(n_adv_cycles):
     
-        if e%(n_adv_cycles//10) == 0:
+        # report progress
+        if e > 10 and e%(n_adv_cycles//10) == 0:
             print('{e}/{t}'.format(e=e, t=n_adv_cycles))
+
         # optimisation steps
         losses['DR'].append(train(sess, opt_DR, loss_DR, inputs, generate, n_samples, n_clf, None))
         losses['R'].append(train(sess, opt_R, loss_R, inputs, generate, n_samples, n_adv, None))
