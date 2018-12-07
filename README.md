@@ -1,4 +1,4 @@
 # FairMass
-Fariness in ML with invariant mass as sensitive parameter.
+Fairness in ML with invariant mass as sensitive parameter. Toy example:
 
-![](Clf_perf.gif "perf")
+![caption](Clf_perf_100.gif "perf")
