@@ -133,6 +133,29 @@ def plot_2D(fX, Y, Z, pname, batch=False):
     plt.close(fig)
 
 
+def plot_losses(loss_D, loss_R, loss_DR, MIs, adversary, pname):
+
+    # plot
+    fig, ax = plt.subplots(3, figsize=(7,7), sharex=True)
+    ax[0].plot(range(len(loss_D)), loss_D, c='k', label='loss D')
+    ax[0].legend(loc='best')
+    if adversary == 'MINE':
+        ax[1].plot([0, len(MIs)], [0,0], 'k:')
+        ax[1].plot(range(len(MIs)), MIs, c='navy', label='True MI')
+        ax[1].plot(range(len(loss_R)), -np.array(loss_R), c='navy', linestyle=':',  label='Estimate of MI')
+        ax[1].legend(loc='best')
+    else:
+        ax[1].plot(range(len(loss_R)), loss_R, c='navy', label='loss R')
+        ax[1].legend(loc='best')
+    ax[2].plot(range(len(loss_DR)), loss_DR, c='royalblue', label='loss DR')
+    ax[2].legend(loc='best')
+    ax[2].set_xlabel('Adversarial cycles')
+
+    # save
+    plt.savefig(pname)
+    plt.close(fig)
+
+
 def plot_MI(MINEs, MIs, n_adv_cycles, pname, batch=False):
     
     # plot
