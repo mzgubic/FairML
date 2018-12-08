@@ -1,3 +1,4 @@
+import os
 import tensorflow as tf
 import numpy as np
 import matplotlib
@@ -6,8 +7,8 @@ from sklearn.metrics import roc_curve
 from sklearn.neighbors import KernelDensity
 
 
-def plot_classifier_performance(data, pname='Clf_perf.pdf', batch=False):
-        
+def plot_classifier_performance(data, pname, batch=False):
+
     # predict on special values of Z
     n_samples = 10000
     X, Y, Z = data['all Z']
@@ -135,21 +136,30 @@ def plot_2D(fX, Y, Z, pname, batch=False):
 
 def plot_losses(loss_D, loss_R, loss_DR, MIs, adversary, pname):
 
+    # cut away first N to get 'zoom in' effect
+    n_tot = len(loss_D)
+    n_cut = 15 if len(MIs) > 30 else 0
+    loss_D = loss_D[n_cut:]
+    loss_R = loss_R[n_cut:]
+    loss_DR = loss_DR[n_cut:]
+    MIs = MIs[n_cut:]
+
     # plot
     fig, ax = plt.subplots(3, figsize=(7,7), sharex=True)
-    ax[0].plot(range(len(loss_D)), loss_D, c='k', label='loss D')
+    ax[0].plot(range(n_cut, n_tot), loss_D, c='k', label='loss D')
     ax[0].legend(loc='best')
     if adversary == 'MINE':
-        ax[1].plot([0, len(MIs)], [0,0], 'k:')
-        ax[1].plot(range(len(MIs)), MIs, c='navy', label='True MI')
-        ax[1].plot(range(len(loss_R)), -np.array(loss_R), c='navy', linestyle=':',  label='Estimate of MI')
+        ax[1].plot([0, n_tot], [0,0], 'k:')
+        ax[1].plot(range(n_cut, n_tot), MIs, c='navy', label='True MI')
+        ax[1].plot(range(n_cut, n_tot), -np.array(loss_R), c='navy', linestyle=':',  label='Estimate of MI')
         ax[1].legend(loc='best')
     else:
-        ax[1].plot(range(len(loss_R)), loss_R, c='navy', label='loss R')
+        ax[1].plot(range(n_cut, n_tot), loss_R, c='navy', label='loss R')
         ax[1].legend(loc='best')
-    ax[2].plot(range(len(loss_DR)), loss_DR, c='royalblue', label='loss DR')
+    ax[2].plot(range(n_cut, n_tot), loss_DR, c='royalblue', label='loss DR')
     ax[2].legend(loc='best')
     ax[2].set_xlabel('Adversarial cycles')
+    ax[2].set_xlim(0, n_tot)
 
     # save
     plt.savefig(pname)
