@@ -5,7 +5,7 @@ The goal is to predict y (circle or x in top left) based on features x1 and x2. 
 
 ![caption](Clf_perf_100.gif "perf")
 
-The evolution of classifier performance as the adversarial training progresses is shown in remaining 
+The evolution of classifier performance as the adversarial training progresses is shown in remaining figures:
 
 Top right shows the decision surface in x1, x2 space, which becomes a plane constant in x2.
 
