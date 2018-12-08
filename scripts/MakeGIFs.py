@@ -30,7 +30,11 @@ def main():
     parser.add_argument('--lam',
                         type=float,
                         default=50.,
-                        help='Lambda controls the adversary cost')
+                        help='Lambda controls the adversary cost.')
+    parser.add_argument('--learning-rate',
+                        type=float,
+                        default=0.01,
+                        help='Learning rate for the optimiser.')
     parser.add_argument('--epsilon',
                         type=float,
                         default=0.001,
@@ -38,8 +42,6 @@ def main():
     args = parser.parse_args()
 
     description = utils.dict_to_unix(vars(args))
-
-    # TODO: learning rate
 
     #####################
     # generate test data (a large, one time only thing)
@@ -88,22 +90,22 @@ def main():
     # create the classifier graph, loss, and optimisation
     clf_output, vars_D = models.classifier(x_in, name+'_clf')
     loss_D = models.classifier_loss(clf_output, y_in)
-    opt_D = tf.train.AdamOptimizer(learning_rate=0.01, epsilon=args.epsilon).minimize(loss_D, var_list=vars_D)
+    opt_D = tf.train.AdamOptimizer(learning_rate=args.learning_rate, epsilon=args.epsilon).minimize(loss_D, var_list=vars_D)
     
     # create the adversary graph, loss, and optimisation
     if args.adversary == 'MINE':
         T_xy, T_x_y, vars_R = models.MINE(clf_output, z_in, name+'_adv')
         loss_R = models.MINE_loss(T_xy, T_x_y)
-        opt_R = tf.train.AdamOptimizer(learning_rate=0.01, epsilon=args.epsilon).minimize(loss_R, var_list=vars_R)
+        opt_R = tf.train.AdamOptimizer(learning_rate=args.learning_rate, epsilon=args.epsilon).minimize(loss_R, var_list=vars_R)
 
     elif args.adversary == 'GaussMixNLL':
         adv_output, vars_R = models.adversary_gaussmix(clf_output, n_components, name+'_adv')
         loss_R = models.adversary_gaussmix_loss(z_in, adv_output, n_components)
-        opt_R = tf.train.AdamOptimizer(learning_rate=0.01, epsilon=args.epsilon).minimize(loss_R, var_list=vars_R)
+        opt_R = tf.train.AdamOptimizer(learning_rate=args.learning_rate, epsilon=args.epsilon).minimize(loss_R, var_list=vars_R)
     
     # create the combined loss function (for the classifier training in the adversarial part)
     loss_DR = loss_D - lam*loss_R
-    opt_DR = tf.train.AdamOptimizer(learning_rate=0.005, epsilon=args.epsilon).minimize(loss_DR, var_list=vars_D)
+    opt_DR = tf.train.AdamOptimizer(learning_rate=args.learning_rate, epsilon=args.epsilon).minimize(loss_DR, var_list=vars_D)
     
     # initialise the variables
     sess.run(tf.global_variables_initializer())
