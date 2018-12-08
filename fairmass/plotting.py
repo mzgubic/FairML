@@ -70,7 +70,7 @@ def plot_classifier_performance(data, pname='Clf_perf.pdf', batch=False):
     plt.close(fig)
 
 
-def plot_2D_GaussMix(fX, Y, Z, pname, batch=False):
+def plot_2D(fX, Y, Z, pname, batch=False):
     
     # percentiles
     Z_median = np.percentile(Z, 50)
@@ -133,44 +133,19 @@ def plot_2D_GaussMix(fX, Y, Z, pname, batch=False):
     plt.close(fig)
 
 
-def plot_Z_density(Z, fX, NLLs, n_adv_cycles, n_curves=3, pname='Z_density.pdf', batch=False):
-
-    # make the cuts
-    boundaries = np.linspace(0, 1, n_curves+1)
-    upper = np.array(boundaries[1:])
-    lower = np.array(boundaries[:-1])
-    centres = (upper+lower)/2.
+def plot_MI(MINEs, MIs, n_adv_cycles, pname, batch=False):
     
-    # make the Z distributions (kernels) in cuts of f(X)
-    Z_plot = np.linspace(-4, 4, 100)
-    Zs = {}
-    log_dens = {}
+    # plot
+    fig, ax = plt.subplots(figsize=(7,7))
+    ax.plot([0, n_adv_cycles], [0,0], 'k:')
+    ax.plot(range(len(MIs)), MIs, 'g-', label='True MI')
+    ax.plot(range(len(MINEs)), MINEs, 'g:', label='Estimate of MI')
+    ax.set_xlim(0, n_adv_cycles)
+    ax.set_xlabel('Adversarial cycles')
+    ax.set_ylim(-0.01)
+    ax.legend(loc='best')
     
-    for i in range(len(centres)):
-        low = lower[i]
-        upp = upper[i]
-        Zs[i] = Z[np.logical_and(fX>low, fX<upp)]
-    
-        kde = KernelDensity(kernel='gaussian', bandwidth=0.2).fit(Zs[i].reshape(-1,1))
-        log_dens[i] = kde.score_samples(Z_plot.reshape(-1,1))
-    
-    # make the plot
-    fig, ax = plt.subplots(2, figsize=(7,7), gridspec_kw={'height_ratios':[1, 3]})
-    plt.subplots_adjust(hspace=0.5)
-    ax[0].plot(range(1, len(NLLs)+1), NLLs, c='k')
-    ax[0].set_xlabel('Adversarial cycles')
-    ax[0].set_ylabel('NLL')
-    ax[0].set_xlim(1, n_adv_cycles)
-    cmap = matplotlib.cm.get_cmap('Reds')
-    for i in Zs:
-        label = 'p( z | f(X)>{:1.2f} & f(X)<{:1.2f})'.format(lower[i], upper[i])
-        ax[1].plot(Z_plot, np.exp(log_dens[i]), label=label, color=cmap(centres[i]))
-    ax[1].set_xlabel('Sensitive parameter Z')
-    ax[1].set_ylabel('p(z|f(X))')
-    ax[1].set_xlim(-4,4)
-    ax[1].set_ylim(0,0.7)
-    ax[1].legend(loc='best')
-
+    # save
     plt.savefig(pname)
     if not batch:
         plt.show()
