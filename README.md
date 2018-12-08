@@ -11,4 +11,7 @@ The evolution of classifier performance as the adversarial training progresses i
 
 - Bottom figures show the ROC curves and classifier distributions for Z in {1, 0, -1} which converge as training progresses.
 
-Note that training is done on a continuous Z, but discrete values are generated for performance testing.
+Finally, the plot below shows how the classifier adjusts its response (f(X)) at high and low values of Z to achieve
+fairness w.r.t to this parameter.
+
+![caption](fX_vs_Z.gif "fX")
