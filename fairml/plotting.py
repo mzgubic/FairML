@@ -19,6 +19,7 @@ def plot_classifier_performance(data, pname, batch=False):
     
     # define figure (plot grid)
     fig, ax = plt.subplots(2, 2, figsize=(10, 10))
+    fig.suptitle(os.path.basename(pname).split('.')[0])
     lim = 3
     
     # plot the variates
@@ -94,6 +95,7 @@ def plot_2D(fX, Y, Z, pname, batch=False):
     
     # plot
     fig, ax = plt.subplots(2, 2, figsize=(7,7), gridspec_kw={'height_ratios':[1,4], 'width_ratios':[4,1]}, sharex='col', sharey='row')
+    fig.suptitle(os.path.basename(pname).split('.')[0])
     
     # fill and median line
     ax[1,0].fill_between([-4,Z_median], [0,0], [1,1], facecolor='tomato', interpolate=True, alpha=0.5)
@@ -146,6 +148,7 @@ def plot_losses(loss_D, loss_R, loss_DR, MIs, adversary, pname):
 
     # plot
     fig, ax = plt.subplots(3, figsize=(7,7), sharex=True)
+    fig.suptitle(os.path.basename(pname).split('.')[0])
     ax[0].plot(range(n_cut, n_tot), loss_D, c='k', label='loss D')
     ax[0].legend(loc='best')
     if adversary == 'MINE':
@@ -170,6 +173,7 @@ def plot_MI(MINEs, MIs, n_adv_cycles, pname, batch=False):
     
     # plot
     fig, ax = plt.subplots(figsize=(7,7))
+    fig.suptitle(os.path.basename(pname).split('.')[0])
     ax.plot([0, n_adv_cycles], [0,0], 'k:')
     ax.plot(range(len(MIs)), MIs, 'g-', label='True MI')
     ax.plot(range(len(MINEs)), MINEs, 'g:', label='Estimate of MI')
