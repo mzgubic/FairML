@@ -7,8 +7,8 @@ The goal is to predict y (circle or x in top left) based on features x1 and x2. 
 
 The evolution of classifier performance as the adversarial training progresses is shown in remaining figures:
 
-Top right shows the decision surface in x1, x2 space, which becomes a plane constant in x2.
+- Top right shows the decision surface in x1, x2 space, which becomes a plane constant in x2.
 
-Bottom figures show the ROC curves and classifier distributions for Z in {1, 0, -1} which converge as training progresses.
+- Bottom figures show the ROC curves and classifier distributions for Z in {1, 0, -1} which converge as training progresses.
 
 Note that training is done on a continuous Z, but discrete values are generated for performance testing.
