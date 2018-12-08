@@ -94,10 +94,12 @@ def plot_2D_GaussMix(fX, Y, Z, pname, batch=False):
     # plot
     fig, ax = plt.subplots(2, 2, figsize=(7,7), gridspec_kw={'height_ratios':[1,4], 'width_ratios':[4,1]}, sharex='col', sharey='row')
     
-    # scatter
+    # fill and median line
     ax[1,0].fill_between([-4,Z_median], [0,0], [1,1], facecolor='tomato', interpolate=True, alpha=0.5)
     ax[1,0].fill_between([Z_median,4], [0,0], [1,1], facecolor='darkred', interpolate=True, alpha=0.5)
+    ax[1,0].plot([-4, 4], [fX_median, fX_median], 'k:')
 
+    # scatter
     indices = np.arange(0, len(Z), 500)
     Z_sc, Y_sc, fX_sc = Z[indices], Y[indices], fX[indices]
     col = np.where(fX_sc[Y_sc==0]<fX_median, 'royalblue', 'darkblue').reshape(-1)
