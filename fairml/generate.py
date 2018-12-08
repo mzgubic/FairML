@@ -6,6 +6,10 @@ def generate_toys(n_samples, z=None):
 
     if z == None:
         Z = np.random.normal(0, 1, size=n_samples)
+    elif z == '2gauss':
+        Z0 = np.random.normal(0, 1, size=n_samples//2)
+        Z1 = np.random.normal(1, 1, size=n_samples//2)
+        Z = np.concatenate([Z0, Z1])
     else:
         Z = z * np.ones(n_samples)
 

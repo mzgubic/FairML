@@ -33,7 +33,7 @@ def main():
                         help='Lambda controls the adversary cost.')
     parser.add_argument('--learning-rate',
                         type=float,
-                        default=0.01,
+                        default=0.005,
                         help='Learning rate for the optimiser.')
     parser.add_argument('--epsilon',
                         type=float,
@@ -189,7 +189,7 @@ def main():
         dirn = 'media/plots/{}'.format(pname)
         in_pngs = ' '.join(['{d}/{p}_{c:03}.png'.format(d=dirn, p=pname, c=c) for c in range(n_adv_cycles)])
         out_gif = 'media/gifs/{p}_{c}.gif'.format(p=pname, c=n_adv_cycles)
-        os.system('convert -colors 16 -loop 0 -delay 10 {i} {o}'.format(i=in_pngs, o=out_gif))
+        os.system('convert -colors 32 -loop 0 -delay 10 {i} {o}'.format(i=in_pngs, o=out_gif))
         print(out_gif)
 
 if __name__ == '__main__':
