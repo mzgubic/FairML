@@ -7,12 +7,12 @@ matplotlib.use("TkAgg")
 from sklearn.feature_selection import mutual_info_regression
 
 import sys
-sys.path.insert(0, '/Users/zgubic/Projects/FairML/fairml')
-import plotting
-import generate
-import models
-import actions
-import utils
+sys.path.insert(0, '..')
+from fairml import plotting
+from fairml import generate
+from fairml import models
+from fairml import actions
+from fairml import utils
 
 def main():
 
