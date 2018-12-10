@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def train(sess, opt, loss, inputs, generate, n_samples, n_epochs, text):
+def train(sess, opt, loss, inputs, generate, n_samples, n_epochs, text, constant=None):
     
     # unpack
     x_in, y_in, z_in = inputs
@@ -20,6 +20,8 @@ def train(sess, opt, loss, inputs, generate, n_samples, n_epochs, text):
     if not text==None:
         fig, ax = plt.subplots()
         ax.plot(range(len(losses)), losses, c='k', label=text)
+        if not constant == None:
+            ax.plot([0, len(losses)], [constant, constant])
         ax.set_xlabel('epochs')
         ax.legend(loc='best')
         ax.set_title(text)
