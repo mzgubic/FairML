@@ -201,3 +201,72 @@ def plot_toy_variates(X, Y, Z):
     leg = ax.legend(loc='best')
     leg.legendHandles[1].set_color('red')
     fig.show()
+
+
+def plot_hmumu_performance(X, Y, Z, W, fX, fpr, tpr, pname, batch=False):
+    
+    # cut in sensitive parameter
+    mw = 10 # 10 GeV mass window on each side
+    ind_lo = Z < 125-mw
+    ind_hi = Z > 125+mw
+    ind_mi = np.logical_and(np.logical_not(ind_lo), np.logical_not(ind_hi))
+    
+    X_lo_all, Y_lo_all, Z_lo_all, W_lo_all, fX_lo_all = X[ind_lo], Y[ind_lo], Z[ind_lo], W[ind_lo], fX[ind_lo]
+    X_hi_all, Y_hi_all, Z_hi_all, W_hi_all, fX_hi_all = X[ind_hi], Y[ind_hi], Z[ind_hi], W[ind_hi], fX[ind_hi]
+    X_mi_all, Y_mi_all, Z_mi_all, W_mi_all, fX_mi_all = X[ind_mi], Y[ind_mi], Z[ind_mi], W[ind_mi], fX[ind_mi]
+    
+    # ROC curve
+    fig, ax = plt.subplots(3, 2, figsize=(10,15))
+    fpr_all, tpr_all, _ = roc_curve(Y, fX, sample_weight=W)
+    fpr_hi, tpr_hi, _ = roc_curve(Y_hi_all, fX_hi_all, sample_weight=W_hi_all)
+    fpr_mi, tpr_mi, _ = roc_curve(Y_mi_all, fX_mi_all, sample_weight=W_mi_all)
+    fpr_lo, tpr_lo, _ = roc_curve(Y_lo_all, fX_lo_all, sample_weight=W_lo_all)
+    ax[0,0].plot([0,1], [0,1], 'k:', label='Random guess')
+    ax[0,0].plot(fpr, tpr, 'k:', label='GBC benchmark')
+    ax[0,0].plot(fpr_all, tpr_all, linestyle='-', c='red', label='All')
+    ax[0,0].plot(fpr_hi, tpr_hi, linestyle=':', c='darkred', label='High mass')
+    ax[0,0].plot(fpr_mi, tpr_mi, linestyle=':', c='red', label='Mid mass')
+    ax[0,0].plot(fpr_lo, tpr_lo, linestyle=':', c='tomato', label='Low mass')
+    ax[0,0].set_xlabel('False positive rate')
+    ax[0,0].set_ylabel('True positive rate')
+    ax[0,0].legend(loc='best')
+    
+    for yval in [0, 1]:
+        
+        # select only signal/background events
+        i_hi = Y_hi_all == yval
+        i_mi = Y_mi_all == yval
+        i_lo = Y_lo_all == yval
+        X_hi, Y_hi, Z_hi, W_hi, fX_hi = X_hi_all[i_hi], Y_hi_all[i_hi], Z_hi_all[i_hi], W_hi_all[i_hi], fX_hi_all[i_hi]
+        X_mi, Y_mi, Z_mi, W_mi, fX_mi = X_mi_all[i_mi], Y_mi_all[i_mi], Z_mi_all[i_mi], W_mi_all[i_mi], fX_mi_all[i_mi]
+        X_lo, Y_lo, Z_lo, W_lo, fX_lo = X_lo_all[i_lo], Y_lo_all[i_lo], Z_lo_all[i_lo], W_lo_all[i_lo], fX_lo_all[i_lo]
+ 
+        y_text = 'signal' if yval == 1 else 'background'
+    
+        # set parameters
+        nbins = 50
+        mass_lo = 110
+        mass_hi = 160
+    
+        # invariant mass plot
+        ax[yval+1, 0].set_title(y_text+' only events')
+        ax[yval+1, 0].hist(Z_hi, bins=nbins, weights=W_hi, range=(mass_lo,mass_hi), histtype='step', color='darkred', label='High mass')
+        ax[yval+1, 0].hist(Z_mi, bins=nbins, weights=W_mi, range=(mass_lo,mass_hi), histtype='step', color='red', label='Mid mass')
+        ax[yval+1, 0].hist(Z_lo, bins=nbins, weights=W_lo, range=(mass_lo,mass_hi), histtype='step', color='tomato', label='Low mass')
+        ax[yval+1, 0].set_xlim(mass_lo, mass_hi)
+        ax[yval+1, 0].set_xlabel('Invariant Mass [GeV]')
+        ax[yval+1, 0].legend(loc='best')
+    
+        # classifier response distributions
+        ax[yval+1, 1].set_title(y_text+' only events')
+        ax[yval+1, 1].hist(fX_hi, bins=nbins, weights=W_hi, range=(0,1), histtype='step', density=True, color='darkred', label='High mass')
+        ax[yval+1, 1].hist(fX_mi, bins=nbins, weights=W_mi, range=(0,1), histtype='step', density=True, color='red', label='Mid mass')
+        ax[yval+1, 1].hist(fX_lo, bins=nbins, weights=W_lo, range=(0,1), histtype='step', density=True, color='tomato', label='Low mass')
+        ax[yval+1, 1].set_xlabel('Classifier output')
+        ax[yval+1, 1].legend(loc='best')
+    
+    # save
+    plt.savefig(pname)
+    if not batch:
+        plt.show()
+    plt.close(fig)
