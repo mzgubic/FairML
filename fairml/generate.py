@@ -17,6 +17,14 @@ def generate_toys(n_samples, z=None):
     X1 = np.random.multivariate_normal([1, 1], 0.5*np.eye(2), size=n_samples//2)
     X1[:,1] += Z[n_samples//2:]
     X = np.concatenate([X0, X1])
+
+    # reshuffle to mix y=0,1
+    x1, x2 = X[:,0], X[:,1]
+    s = np.stack([x1, x2, Y, Z], axis=1)
+    X = s[:, :2]
+    Y = s[:, 2]
+    Z = s[:, 3]
+
     return X, Y, Z
 
 
