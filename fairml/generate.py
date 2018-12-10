@@ -51,15 +51,20 @@ def generate_hmumu():
     scaled_X = x_scaler.fit_transform(X)
     scaled_Z = z_scaler.fit_transform(Z)
 
-    # first yield the scalers
-    #print('yielding the scalers')
-    yield x_scaler, z_scaler
+    # define a generator which randomly samples the data
+    def generator():
+        while True:
+            n_samples = yield # feed how many samples you'd like in each iteration (using send method)
+            indices = np.random.randint(0, n_total, size=n_samples)
+            yield scaled_X[indices, :], Y[indices, :], scaled_Z[indices, :], W[indices, :]
 
-    # and then sample the dataset randomly
-    while True:
-        #print('receiving the n_samples')
-        n_samples = yield # feed how many samples you'd like in each iteration (using send method)
-        indices = np.random.randint(0, n_total, size=n_samples)
-        #print('yielding scaled data')
-        yield scaled_X[indices, :], Y[indices, :], scaled_Z[indices, :], W[indices, :]
+    # create a generator instance
+    gen_inst = generator()
+
+    # and return the convenience function which calls that instance of a generator to yield the n_samples
+    def generate(n_samples):
+        next(gen_inst)
+        return gen_inst.send(n_samples)
+
+    return x_scaler, z_scaler, generate
 
