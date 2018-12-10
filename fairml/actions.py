@@ -4,15 +4,24 @@ import matplotlib.pyplot as plt
 
 def train(sess, opt, loss, inputs, generate, n_samples, n_epochs, text, constant=None):
     
-    # unpack
-    x_in, y_in, z_in = inputs
+    # unpack depending on whether weights are present
+    try:
+        x_in, y_in, z_in = inputs
+    except ValueError:
+        x_in, y_in, z_in, w_in = inputs
     
     # train it
     losses = []
     
     for epoch in range(n_epochs):
-        X, Y, Z = generate(n_samples)
-        feed_dict = {x_in:X, y_in:Y, z_in:Z}
+
+        try:
+            X, Y, Z = generate(n_samples)
+            feed_dict = {x_in:X, y_in:Y, z_in:Z}
+        except ValueError:
+            X, Y, Z, W = generate(n_samples)
+            feed_dict = {x_in:X, y_in:Y, z_in:Z, w_in:W}
+
         _, l = sess.run([opt, loss], feed_dict=feed_dict)
         losses.append(l)
     

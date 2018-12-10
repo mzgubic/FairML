@@ -58,12 +58,16 @@ def classifier(x_in, name):
     return output, these_vars
 
 
-def classifier_loss(clf_output, y_in):
+def classifier_loss(clf_output, y_in, w_in=None):
     
     # define the loss 
     n_samples = tf.shape(y_in)[0]
     y_shaped = tf.reshape(y_in, shape=(n_samples, 1))
-    loss_D = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=y_shaped, logits=clf_output))
+    if w_in == None:
+        loss_D = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=y_shaped, logits=clf_output))
+    else:
+        xentropy = tf.nn.sigmoid_cross_entropy_with_logits(labels=y_shaped, logits=clf_output)
+        loss_D = tf.reduce_mean(w_in * xentropy)
     
     return loss_D
 
