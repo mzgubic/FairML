@@ -33,7 +33,7 @@ def generate_toys(n_samples, z=None):
 def generate_hmumu():
 
     # first, load the dataset
-    df = pd.read_csv('../data/combined_10000.csv')
+    df = pd.read_csv('../data/combined_100000.csv')
     n_total = df.shape[0]
 
     X_names = ['Muons_Eta_Lead', 'Muons_Eta_Sub', 'Z_PT']
