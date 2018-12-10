@@ -35,11 +35,15 @@ def generate_hmumu():
     # first, load the dataset
     df = pd.read_csv('../data/combined_100000.csv')
     n_total = df.shape[0]
+    n_sig = np.sum(df.IsSignal == 1)
+    n_bkg = np.sum(df.IsSignal == 0)
 
+    # create the X, Y, Z, and W frames
     X_names = ['Muons_Eta_Lead', 'Muons_Eta_Sub', 'Z_PT']
     Z_names = ['Muons_Minv_MuMu']
     Y_names = ['IsSignal']
-    W_names = ['GlobalWeight', 'MLWeight']
+    W_names = ['GlobalWeight']
+
     X = df[X_names]
     Z = df[Z_names]
     Y = df[Y_names].values
@@ -51,30 +55,78 @@ def generate_hmumu():
     scaled_X = x_scaler.fit_transform(X)
     scaled_Z = z_scaler.fit_transform(Z)
 
-    # define a generator which randomly samples the data
-    def generator():
-        while True:
-            n_samples = yield # feed how many samples you'd like in each iteration (using send method)
-            indices = np.random.randint(0, n_total, size=n_samples)
-            yield scaled_X[indices, :], Y[indices, :], scaled_Z[indices, :], W[indices, :]
+    # create separate sig and bkg frames (for balancing)
+    sig_ind = (Y == 1).reshape(-1)
+    X_sig = scaled_X[sig_ind, :]
 
-    # create a generator instance
-    gen_inst = generator()
+    Y_sig = Y[sig_ind, :]
+    Z_sig = scaled_Z[sig_ind, :]
+    W_sig = W[sig_ind, :]
+
+    bkg_ind = (Y == 0).reshape(-1)
+    X_bkg = scaled_X[bkg_ind, :]
+    Y_bkg = Y[bkg_ind, :]
+    Z_bkg = scaled_Z[bkg_ind, :]
+    W_bkg = W[bkg_ind, :]
+
+    # define a generator which randomly samples the data
+    def generator(balanced=False):
+        while True:
+
+            n_samples = yield # feed how many samples you'd like in each iteration (using send method)
+
+            # balanced classes (training)
+            # ----------------
+            # - same number of sig/bkg classes
+            # - equal total weights for both
+            if balanced:
+
+                # sample sig events
+                indices = np.random.randint(0, n_sig, size=n_samples//2)
+                xs, ys, zs, ws = X_sig[indices, :], Y_sig[indices, :], Z_sig[indices, :], W_sig[indices, :]
+
+                # sample bkg events
+                indices = np.random.randint(0, n_bkg, size=n_samples//2)
+                xb, yb, zb, wb = X_bkg[indices, :], Y_bkg[indices, :], Z_bkg[indices, :], W_bkg[indices, :]
+
+                # normalise the weights
+                ws_tot = np.sum(ws)
+                wb_tot = np.sum(wb)
+                ws = ws * (1.0/ws_tot)
+                wb = wb * (1.0/wb_tot)
+
+                yield np.vstack([xs,xb]), np.vstack([ys,yb]), np.vstack([zs,zb]), np.vstack([ws,wb])
+
+            # imbalanced classes (evaluation)
+            # ----------------
+            # - do not change the underlying class distributions
+            # - use Global (physical) weights
+            else:
+
+                # sample mixed events
+                indices = np.random.randint(0, n_total, size=n_samples)
+                yield scaled_X[indices, :], Y[indices, :], scaled_Z[indices, :], W[indices, :]
+
+    # create a generator instance (called in the convenience function later on)
+    balanced_gen_inst = generator(balanced=True)
+    imbalanced_gen_inst = generator(balanced=False)
 
     # and return the convenience function which calls that instance of a generator to yield the n_samples
-    def generate(n_samples, weights='ML'):
+    def generate(n_samples, balanced=True):
 
-        # pass the value and yield samples
-        next(gen_inst)
-        X, Y, Z, W = gen_inst.send(n_samples)
-
-        # pick the correct weights
-        if not weights in ['ML', 'Global']:
-            raise ValueError
-        w_ind = 0 if weights == 'Global' else 1
+        # balanced classes needed for training
+        if balanced:
+            next(balanced_gen_inst)
+            X, Y, Z, W = balanced_gen_inst.send(n_samples)
+            
+        # imbalanced (original) needed for evaluation
+        else:
+            next(imbalanced_gen_inst)
+            X, Y, Z, W = imbalanced_gen_inst.send(n_samples)
 
         # and return the correct shapes 
-        return X, Y.reshape(-1), Z.reshape(-1), W[:, w_ind].reshape(-1)
+        return X, Y.reshape(-1), Z.reshape(-1), W.reshape(-1)
 
     return x_scaler, z_scaler, generate
+
 
