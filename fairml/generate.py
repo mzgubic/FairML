@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
 
 def generate_toys(n_samples, z=None):
     Y = np.zeros(n_samples)
@@ -27,4 +29,37 @@ def generate_toys(n_samples, z=None):
 
     return X, Y, Z
 
+
+def generate_hmumu():
+
+    # first, load the dataset
+    df = pd.read_csv('../data/combined_10000.csv')
+    n_total = df.shape[0]
+
+    X_names = ['Muons_Eta_Lead', 'Muons_Eta_Sub', 'Z_PT']
+    Z_names = ['Muons_Minv_MuMu']
+    Y_names = ['IsSignal']
+    W_names = ['GlobalWeight', 'MLWeight']
+    X = df[X_names]
+    Z = df[Z_names]
+    Y = df[Y_names].values
+    W = df[W_names].values
+
+    # normalise all features
+    x_scaler = StandardScaler()
+    z_scaler = StandardScaler()
+    scaled_X = x_scaler.fit_transform(X)
+    scaled_Z = z_scaler.fit_transform(Z)
+
+    # first yield the scalers
+    #print('yielding the scalers')
+    yield x_scaler, z_scaler
+
+    # and then sample the dataset randomly
+    while True:
+        #print('receiving the n_samples')
+        n_samples = yield # feed how many samples you'd like in each iteration (using send method)
+        indices = np.random.randint(0, n_total, size=n_samples)
+        #print('yielding scaled data')
+        yield scaled_X[indices, :], Y[indices, :], scaled_Z[indices, :], W[indices, :]
 
