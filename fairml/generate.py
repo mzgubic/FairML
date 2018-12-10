@@ -62,9 +62,19 @@ def generate_hmumu():
     gen_inst = generator()
 
     # and return the convenience function which calls that instance of a generator to yield the n_samples
-    def generate(n_samples):
+    def generate(n_samples, weights='ML'):
+
+        # pass the value and yield samples
         next(gen_inst)
-        return gen_inst.send(n_samples)
+        X, Y, Z, W = gen_inst.send(n_samples)
+
+        # pick the correct weights
+        if not weights in ['ML', 'Global']:
+            raise ValueError
+        w_ind = 0 if weights == 'Global' else 1
+
+        # and return the correct shapes 
+        return X, Y.reshape(-1), Z.reshape(-1), W[:, w_ind].reshape(-1)
 
     return x_scaler, z_scaler, generate
 
