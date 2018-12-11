@@ -203,8 +203,11 @@ def plot_toy_variates(X, Y, Z):
     fig.show()
 
 
-def plot_hmumu_performance(X, Y, Z, W, fX, fpr, tpr, pname, batch=False):
+def plot_hmumu_performance(X, Y, Z, W, fX, benchmarks, pname, batch=False):
     
+    # unpack benchmarks
+    fprs, tprs, titles = benchmarks 
+
     # cut in sensitive parameter
     mw = 10 # 10 GeV mass window on each side
     ind_lo = Z < 125-mw
@@ -221,14 +224,15 @@ def plot_hmumu_performance(X, Y, Z, W, fX, fpr, tpr, pname, batch=False):
     fpr_hi, tpr_hi, _ = roc_curve(Y_hi_all, fX_hi_all, sample_weight=W_hi_all)
     fpr_mi, tpr_mi, _ = roc_curve(Y_mi_all, fX_mi_all, sample_weight=W_mi_all)
     fpr_lo, tpr_lo, _ = roc_curve(Y_lo_all, fX_lo_all, sample_weight=W_lo_all)
-    ax[0,0].plot([0,1], [0,1], 'k:', label='Random guess')
-    ax[0,0].plot(fpr, tpr, 'k:', label='GBC benchmark')
-    ax[0,0].plot(fpr_all, tpr_all, linestyle='-', c='red', label='All')
-    ax[0,0].plot(fpr_hi, tpr_hi, linestyle=':', c='darkred', label='High mass')
-    ax[0,0].plot(fpr_mi, tpr_mi, linestyle=':', c='red', label='Mid mass')
-    ax[0,0].plot(fpr_lo, tpr_lo, linestyle=':', c='tomato', label='Low mass')
-    ax[0,0].set_xlabel('False positive rate')
-    ax[0,0].set_ylabel('True positive rate')
+    ax[0,0].plot([0,1], [1,0], 'k:', label='Random guess')
+    for i in range(len(fprs)):
+        ax[0,0].plot(1-fprs[i], tprs[i], 'k:', label=titles[i])
+    ax[0,0].plot(1-fpr_all, tpr_all, linestyle='-', c='red', label='All')
+    ax[0,0].plot(1-fpr_hi, tpr_hi, linestyle=':', c='darkred', label='High mass')
+    ax[0,0].plot(1-fpr_mi, tpr_mi, linestyle=':', c='red', label='Mid mass')
+    ax[0,0].plot(1-fpr_lo, tpr_lo, linestyle=':', c='tomato', label='Low mass')
+    ax[0,0].set_xlabel('Background rejection')
+    ax[0,0].set_ylabel('Signal efficiency')
     ax[0,0].legend(loc='best')
     
     for yval in [0, 1]:
