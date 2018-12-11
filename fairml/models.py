@@ -44,13 +44,18 @@ def MINE_loss(T_xy, T_x_y):
     return loss
 
 
-def classifier(x_in, name):
+def classifier(x_in, name, deep=False):
     
     with tf.variable_scope(name):
         
+        H = 40
+
         # define the output of the network
-        dense1 = layers.relu(x_in, 20)
-        dense2 = layers.relu(dense1, 20)
+        dense1 = layers.relu(x_in, H)
+        dense2 = layers.relu(dense1, H)
+        if deep:
+            dense3 = layers.relu(dense2, H)
+            dense2 = layers.relu(dense3, H)
         output = layers.linear(dense2, 1)
 
     these_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=name)
