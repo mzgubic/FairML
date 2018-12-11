@@ -33,13 +33,13 @@ def generate_toys(n_samples, z=None):
 def generate_hmumu():
 
     # first, load the dataset
-    df = pd.read_csv('../data/combined_100000.csv')
+    df = pd.read_csv('../data/Combined_1000.csv')
     n_total = df.shape[0]
     n_sig = np.sum(df.IsSignal == 1)
     n_bkg = np.sum(df.IsSignal == 0)
 
     # create the X, Y, Z, and W frames
-    X_names = ['Muons_Eta_Lead', 'Muons_Eta_Sub', 'Z_PT']
+    X_names = ['Muons_Eta_Lead', 'Muons_Eta_Sub', 'Z_PT', 'Muons_CosThetaStar']
     Z_names = ['Muons_Minv_MuMu']
     Y_names = ['IsSignal']
     W_names = ['GlobalWeight']
