@@ -31,3 +31,8 @@ def dict_to_unix(conf):
             unix += rmc(conf[key])
 
     return unix[1:] # remove first underscore
+
+# colours
+oxford_blue  = (4*1./255, 30*1./255, 66*1./255) # pantone 282
+blue = (72*1./255, 145*1./255, 220*1./255) # pantone279 
+light_blue = (158*1./255, 206*1./255, 235*1./255) # pantone291
