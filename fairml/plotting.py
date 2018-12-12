@@ -274,3 +274,26 @@ def plot_hmumu_performance(X, Y, Z, W, fX, benchmarks, pname, batch=False):
     if not batch:
         plt.show()
     plt.close(fig)
+
+
+def plot_var_sets(benchmarks, nets, pname, batch=False):
+    
+    # unpack inputs
+    fprs, tprs, labels = benchmarks
+    nfprs, ntprs, nlabels = nets
+    var_sets = fprs.keys()
+    
+    # plot
+    fig, ax = plt.subplots(figsize=(7,7))
+    for v in var_sets:
+        ax.plot(1-fprs[v], tprs[v], label=labels[v], c=cols[v], linestyle=':')
+        ax.plot(1-nfprs[v], ntprs[v], label=nlabels[v], c=cols[v], linestyle='-')
+    ax.legend(loc='best')
+    ax.set_xlabel('Background rejection')
+    ax.set_ylabel('Signal efficiency')
+    
+    # save
+    plt.savefig(pname)
+    if not batch:
+        plt.show()
+    plt.close(fig)
