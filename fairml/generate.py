@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
 
 def generate_toys(n_samples, z=None):
     Y = np.zeros(n_samples)
@@ -33,8 +34,8 @@ def generate_toys(n_samples, z=None):
 def generate_hmumu():
 
     # first, load the dataset
-    df = pd.read_csv('../data/Combined_1000.csv')
-    n_total = df.shape[0]
+    df = pd.read_csv('../data/Combined_10000.csv')
+    n_tot = df.shape[0]
     n_sig = np.sum(df.IsSignal == 1)
     n_bkg = np.sum(df.IsSignal == 0)
     print('------------------------')
@@ -59,22 +60,11 @@ def generate_hmumu():
     scaled_X = x_scaler.fit_transform(X)
     scaled_Z = z_scaler.fit_transform(Z)
 
-    # create separate sig and bkg frames (for balancing)
-    sig_ind = (Y == 1).reshape(-1)
-    X_sig = scaled_X[sig_ind, :]
-
-    Y_sig = Y[sig_ind, :]
-    Z_sig = scaled_Z[sig_ind, :]
-    W_sig = W[sig_ind, :]
-
-    bkg_ind = (Y == 0).reshape(-1)
-    X_bkg = scaled_X[bkg_ind, :]
-    Y_bkg = Y[bkg_ind, :]
-    Z_bkg = scaled_Z[bkg_ind, :]
-    W_bkg = W[bkg_ind, :]
-
     # define a generator which randomly samples the data
-    def generator(balanced=False):
+    def generator(X, Y, Z, W, balanced=False):
+
+        n_tot = X.shape[0]
+
         while True:
 
             n_samples = yield # feed how many samples you'd like in each iteration (using send method)
@@ -84,6 +74,22 @@ def generate_hmumu():
             # - same number of sig/bkg classes
             # - equal total weights for both
             if balanced:
+
+                # create separate sig and bkg frames
+                sig_ind = (Y == 1).reshape(-1)
+                n_sig = np.sum(sig_ind)
+                X_sig = X[sig_ind, :]
+            
+                Y_sig = Y[sig_ind, :]
+                Z_sig = Z[sig_ind, :]
+                W_sig = W[sig_ind, :]
+            
+                bkg_ind = (Y == 0).reshape(-1)
+                n_bkg = np.sum(bkg_ind)
+                X_bkg = X[bkg_ind, :]
+                Y_bkg = Y[bkg_ind, :]
+                Z_bkg = Z[bkg_ind, :]
+                W_bkg = W[bkg_ind, :]
 
                 # sample sig events
                 indices = np.random.randint(0, n_sig, size=n_samples//2)
@@ -108,27 +114,38 @@ def generate_hmumu():
             else:
 
                 # sample mixed events
-                indices = np.random.randint(0, n_total, size=n_samples)
-                yield scaled_X[indices, :], Y[indices, :], scaled_Z[indices, :], W[indices, :]
+                indices = np.random.randint(0, n_tot, size=n_samples)
+                yield X[indices, :], Y[indices, :], Z[indices, :], W[indices, :]
 
-    # create a generator instance (called in the convenience function later on)
-    balanced_gen_inst = generator(balanced=True)
-    imbalanced_gen_inst = generator(balanced=False)
+    # create generator instances (called in the convenience function later on)
+    X_tr, X_te, Y_tr, Y_te, Z_tr, Z_te, W_tr, W_te = train_test_split(scaled_X, Y, scaled_Z, W, random_state=42, test_size=0.2)
 
-    # and return the convenience function which calls that instance of a generator to yield the n_samples
-    def generate(n_samples, balanced=True):
+    balanced_train   = generator(X_tr, Y_tr, Z_tr, W_tr, balanced=True)
+    imbalanced_train = generator(X_tr, Y_tr, Z_tr, W_tr, balanced=False)
+    balanced_test    = generator(X_te, Y_te, Z_te, W_te, balanced=True)
+    imbalanced_test  = generator(X_te, Y_te, Z_te, W_te, balanced=False)
 
-        # balanced classes needed for training
-        if balanced:
-            next(balanced_gen_inst)
-            X, Y, Z, W = balanced_gen_inst.send(n_samples)
+    # and return the convenience function which calls the correct instance of the generator
+    def generate(n_samples, train=True, balanced=True):
+
+        # choose the correct generator
+        if balanced and train:
+            g = balanced_train
+
+        elif not balanced and train:
+            g = imbalanced_train
+
+        elif balanced and not train:
+            print('Go home, you are drunk. Do you really want to test on balanced dataset?')
+            g = balanced_test
+
+        elif not balanced and not train:
+            g = imbalanced_test
             
-        # imbalanced (original) needed for evaluation
-        else:
-            next(imbalanced_gen_inst)
-            X, Y, Z, W = imbalanced_gen_inst.send(n_samples)
-
-        # and return the correct shapes 
+        # get the samples from the correct generator
+        next(g)
+        X, Y, Z, W = g.send(n_samples)
+        print('Getting {} examples.'.format(X.shape[0]))
         return X, Y.reshape(-1), Z.reshape(-1), W.reshape(-1)
 
     return x_scaler, z_scaler, generate
