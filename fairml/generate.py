@@ -41,12 +41,12 @@ def generate_toys(n_samples, z=None):
     return X, Y, Z
 
 
-def generate_hmumu(features='lowlevel'):
+def generate_hmumu(features='low'):
     """
     Get a convenience function which generates hmumu events.
 
     Args:
-        features (string): Which features are used in the dataset. Can be 'lowlevel', 'highlevel', or 'bothlevels'.
+        features (string): Which features are used in the dataset. Can be 'low', 'high', or 'both'.
 
     Returns:
         x_scaler (StandardScaler): Object which scaled the X data
@@ -65,8 +65,18 @@ def generate_hmumu(features='lowlevel'):
     print('------------------------')
 
     # create the X, Y, Z, W frames
-    def create_frames(df):
-        X_names = ['Muons_Eta_Lead', 'Muons_Eta_Sub', 'Z_PT', 'Muons_CosThetaStar']
+    def create_frames(df, features):
+
+        low_level = ['Muons_Eta_Lead', 'Muons_Eta_Sub', 'Muons_Phi_Lead', 'Muons_Phi_Sub', 'Muons_PT_Lead', 'Muons_PT_Sub']
+        high_level = ['Z_PT', 'Muons_CosThetaStar']
+
+        if features == 'low':
+            X_names = low_level
+        elif features == 'high':
+            X_names = high_level
+        elif features == 'both':
+            X_names = low_level+high_level
+
         Z_names = ['Muons_Minv_MuMu']
         Y_names = ['IsSignal']
         W_names = ['GlobalWeight']
@@ -78,7 +88,7 @@ def generate_hmumu(features='lowlevel'):
 
         return X, Y, Z, W
 
-    X, Y, Z, W = create_frames(df)
+    X, Y, Z, W = create_frames(df, features)
 
     # normalise all features
     x_scaler = StandardScaler()
