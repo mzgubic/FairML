@@ -4,6 +4,16 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 
 def generate_toys(n_samples, z=None):
+    """
+    Convenience function which generates toy examples on the fly.
+
+    Args:
+        n_samples (int): Number of samples to be generated
+        z (float): Value of the nuisance parameter to be used, None gives a normal distro of Z values.
+
+    Returns:
+        X, Y, Z: features, target, sensitive variable.
+    """
     Y = np.zeros(n_samples)
     Y[n_samples//2:] = 1
 
@@ -31,7 +41,18 @@ def generate_toys(n_samples, z=None):
     return X, Y, Z
 
 
-def generate_hmumu():
+def generate_hmumu(features='lowlevel'):
+    """
+    Get a convenience function which generates hmumu events.
+
+    Args:
+        features (string): Which features are used in the dataset. Can be 'lowlevel', 'highlevel', or 'bothlevels'.
+
+    Returns:
+        x_scaler (StandardScaler): Object which scaled the X data
+        z_scaler (StandardScaler): Object which scaled the Z data
+        generate (function): Function which samples instances of the data
+    """
 
     # first, load the dataset
     df = pd.read_csv('../data/Combined_10000.csv')
@@ -43,16 +64,21 @@ def generate_hmumu():
     print('{} background events.'.format(n_bkg))
     print('------------------------')
 
-    # create the X, Y, Z, and W frames
-    X_names = ['Muons_Eta_Lead', 'Muons_Eta_Sub', 'Z_PT', 'Muons_CosThetaStar']
-    Z_names = ['Muons_Minv_MuMu']
-    Y_names = ['IsSignal']
-    W_names = ['GlobalWeight']
+    # create the X, Y, Z, W frames
+    def create_frames(df):
+        X_names = ['Muons_Eta_Lead', 'Muons_Eta_Sub', 'Z_PT', 'Muons_CosThetaStar']
+        Z_names = ['Muons_Minv_MuMu']
+        Y_names = ['IsSignal']
+        W_names = ['GlobalWeight']
 
-    X = df[X_names]
-    Z = df[Z_names]
-    Y = df[Y_names].values
-    W = df[W_names].values
+        X = df[X_names]
+        Z = df[Z_names]
+        Y = df[Y_names].values
+        W = df[W_names].values
+
+        return X, Y, Z, W
+
+    X, Y, Z, W = create_frames(df)
 
     # normalise all features
     x_scaler = StandardScaler()
@@ -62,8 +88,16 @@ def generate_hmumu():
 
     # define a generator which randomly samples the data
     def generator(X, Y, Z, W, balanced=False):
+        """
+        Create a generator sampling from inputs datasets.
 
-        n_tot = X.shape[0]
+        Args:
+            X, Y, Z, W (arrays): features, targets, sensitive attributes, weights.
+            balanced (bool): sample balanced or unbalanced (sig vs bkg) events.
+
+        Yields:
+            X, Y, Z, W (arrays): samples from the input datasets.
+        """
 
         while True:
 
@@ -114,6 +148,7 @@ def generate_hmumu():
             else:
 
                 # sample mixed events
+                n_tot = X.shape[0]
                 indices = np.random.randint(0, n_tot, size=n_samples)
                 yield X[indices, :], Y[indices, :], Z[indices, :], W[indices, :]
 
@@ -127,6 +162,17 @@ def generate_hmumu():
 
     # and return the convenience function which calls the correct instance of the generator
     def generate(n_samples, train=True, balanced=True):
+        """
+        Sample hmumu events with replacement.
+
+        Args:
+            n_samples (int): how many events to sample.
+            train (bool): sample train or test part of the dataset.
+            balanced (bool): sample balanced or unbalanced (sig vs bkg) events.
+
+        Returns:
+            X, Y, Z, W (arrays): features, targets, sensitive attributes, weights.
+        """
 
         # choose the correct generator
         if balanced and train:
