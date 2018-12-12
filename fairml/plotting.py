@@ -5,6 +5,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve
 from sklearn.neighbors import KernelDensity
+import utils
 
 
 def plot_classifier_performance(data, pname, batch=False):
@@ -285,6 +286,7 @@ def plot_var_sets(benchmarks, nets, pname, batch=False):
     
     # plot
     fig, ax = plt.subplots(figsize=(7,7))
+    cols = {'low':utils.light_blue, 'high':utils.blue, 'both':utils.oxford_blue}
     for v in var_sets:
         ax.plot(1-fprs[v], tprs[v], label=labels[v], c=cols[v], linestyle=':')
         ax.plot(1-nfprs[v], ntprs[v], label=nlabels[v], c=cols[v], linestyle='-')
