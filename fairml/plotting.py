@@ -286,6 +286,7 @@ def plot_var_sets(benchmarks, nets, pname, batch=False):
     
     # plot
     fig, ax = plt.subplots(figsize=(7,7))
+    fig.suptitle(os.path.basename(pname).split('.')[0])
     cols = {'low':utils.light_blue, 'high':utils.blue, 'both':utils.oxford_blue}
     for v in var_sets:
         ax.plot(1-fprs[v], tprs[v], label=labels[v], c=cols[v], linestyle=':')
@@ -299,3 +300,5 @@ def plot_var_sets(benchmarks, nets, pname, batch=False):
     if not batch:
         plt.show()
     plt.close(fig)
+
+
