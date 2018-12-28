@@ -221,13 +221,14 @@ def plot_hmumu_performance(X, Y, Z, W, fX, benchmarks, pname, batch=False):
     
     # ROC curve
     fig, ax = plt.subplots(3, 2, figsize=(10,15))
+    fig.suptitle(os.path.basename(pname).split('.')[0])
     fpr_all, tpr_all, _ = roc_curve(Y, fX, sample_weight=W)
     fpr_hi, tpr_hi, _ = roc_curve(Y_hi_all, fX_hi_all, sample_weight=W_hi_all)
     fpr_mi, tpr_mi, _ = roc_curve(Y_mi_all, fX_mi_all, sample_weight=W_mi_all)
     fpr_lo, tpr_lo, _ = roc_curve(Y_lo_all, fX_lo_all, sample_weight=W_lo_all)
     ax[0,0].plot([0,1], [1,0], 'k:', label='Random guess')
-    for i in range(len(fprs)):
-        ax[0,0].plot(1-fprs[i], tprs[i], 'k:', label=titles[i])
+    for k in fprs.keys():
+        ax[0,0].plot(1-fprs[k], tprs[k], 'k:', label=titles[k])
     ax[0,0].plot(1-fpr_all, tpr_all, linestyle='-', c='red', label='All')
     ax[0,0].plot(1-fpr_hi, tpr_hi, linestyle=':', c='darkred', label='High mass')
     ax[0,0].plot(1-fpr_mi, tpr_mi, linestyle=':', c='red', label='Mid mass')

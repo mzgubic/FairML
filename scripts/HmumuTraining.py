@@ -85,7 +85,7 @@ def main():
     # Create GBC benchmarks
     #####################
 
-    n_train_samples = 10000
+    n_train_samples = 10000 # TODO: have 'all' option in the generate function
     
     # create training samples
     X_train, Y_train, W_train = {}, {}, {}
@@ -156,14 +156,22 @@ def main():
         
         nets = nfprs, ntprs, nlabels
         
-        # make the var comparison plot
+        # make the variable comparison plot
         pname = 'VarsComparison'
         dirn = 'media/plots/{}'.format(pname)
         if not os.path.exists(dirn):
             os.makedirs(dirn)
         path = '{d}/{n}_{c:03}.png'.format(d=dirn, n=description, c=e)
-        
         plotting.plot_var_sets(benchmarks, nets, path, batch=True)
+
+        # make the classifier performance plot
+        pname = 'MassCheck'
+        dirn = 'media/plots/{}'.format(pname)
+        if not os.path.exists(dirn):
+            os.makedirs(dirn)
+        path = '{d}/{n}_{c:03}.png'.format(d=dirn, n=description, c=e)
+        v = 'both'
+        plotting.plot_hmumu_performance(X[v], Y[v], Z_plot[v], W[v], npreds[v].reshape(-1), benchmarks, path, batch=True)
 
     #####################
     # make the gif out of the plots
@@ -171,11 +179,13 @@ def main():
 
     if not os.path.exists('media/gifs'):
         os.makedirs('media/gifs')
-    dirn = 'media/plots/{}'.format(pname)
-    in_pngs = ' '.join(['{d}/{n}_{c:03}.png'.format(d=dirn, n=description, c=c) for c in range(n_epochs)])
-    out_gif = 'media/gifs/{p}_{n}_{c}.gif'.format(p=pname, n=description, c=n_epochs)
-    os.system('convert -colors 32 -loop 0 -delay 10 {i} {o}'.format(i=in_pngs, o=out_gif))
-    print(out_gif)
+
+    for pname in ['VarsComparison', 'MassCheck']:
+        dirn = 'media/plots/{}'.format(pname)
+        in_pngs = ' '.join(['{d}/{n}_{c:03}.png'.format(d=dirn, n=description, c=c) for c in range(n_epochs)])
+        out_gif = 'media/gifs/{p}_{n}_{c}.gif'.format(p=pname, n=description, c=n_epochs)
+        os.system('convert -colors 32 -loop 0 -delay 10 {i} {o}'.format(i=in_pngs, o=out_gif))
+        print(out_gif)
 
 
 if __name__ == '__main__':
