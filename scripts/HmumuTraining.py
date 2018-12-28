@@ -17,31 +17,7 @@ import actions
 import generate as G
 
 
-def main():
-
-    # parse the arguments
-    parser = argparse.ArgumentParser(description='ArgParser')
-    parser.add_argument('--n-epochs',
-                        type=int,
-                        default=5,
-                        help='Number of epochs to train on.')
-    parser.add_argument('--learning-rate',
-                        type=float,
-                        default=0.005,
-                        help='Learning rate for the optimiser.')
-    parser.add_argument('--epsilon',
-                        type=float,
-                        default=0.001,
-                        help='Epsilon controls the Adam algorithm oscillation near convergence.')
-    parser.add_argument('--adversary',
-                        default=None,
-                        choices=[None, 'MINE', 'GaussMixNLL'],
-                        help='What to use as the adversary.')
-    parser.add_argument('--lam',
-                        type=float,
-                        default=50.,
-                        help='Lambda controls the adversary cost.')
-    args = parser.parse_args()
+def train(args):
 
     #####################
     # Hyperparameters and settings
@@ -186,6 +162,58 @@ def main():
         out_gif = 'media/gifs/{p}_{n}_{c}.gif'.format(p=pname, n=description, c=n_epochs)
         os.system('convert -colors 32 -loop 0 -delay 10 {i} {o}'.format(i=in_pngs, o=out_gif))
         print(out_gif)
+
+
+def main():
+
+    # parse the arguments
+    parser = argparse.ArgumentParser(description='ArgParser')
+    parser.add_argument('--n-epochs',
+                        type=int,
+                        default=5,
+                        help='Number of epochs to train on.')
+    parser.add_argument('--learning-rate',
+                        type=float,
+                        default=0.005,
+                        help='Learning rate for the optimiser.')
+    parser.add_argument('--epsilon',
+                        type=float,
+                        default=0.001,
+                        help='Epsilon controls the Adam algorithm oscillation near convergence.')
+    parser.add_argument('--adversary',
+                        default=None,
+                        choices=[None, 'MINE', 'GaussMixNLL'],
+                        help='What to use as the adversary.')
+    parser.add_argument('--lam',
+                        type=float,
+                        default=50.,
+                        help='Lambda controls the adversary cost.')
+    parser.add_argument('--batch',
+                        action='store_true',
+                        default=False,
+                        help='Send to batch or run interactively.')
+    args = parser.parse_args()
+
+    # run
+    if args.batch == False:
+        train(args)
+
+    # or send a job
+    else:
+
+        # base command
+        command = 'python3 HmumuTraining.py'
+
+        # add the arguments
+        for arg in args.__dict__:
+
+            if arg == 'batch':
+                continue
+
+            key = arg.replace('_', '-')
+            command += ' --{k} {v}'.format(k=key, v=args.__dict__[arg])
+
+        utils.submit_commands([command], queue='veryshort', job_name='training.sh')
 
 
 if __name__ == '__main__':
