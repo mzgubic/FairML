@@ -31,6 +31,7 @@ def train(args):
     lam = args.lam
     deep = True
 
+    n_pretrain_epochs = 30
     n_samples = 1000 # batch size
     n_components = 5 # components of gaussian mixture surrogate model
     n_clf = 1 
@@ -40,6 +41,7 @@ def train(args):
     #####################
     # Generate test data
     #####################
+    print('--- Generate test data')
 
     var_sets = ['low', 'high', 'both']
     
@@ -90,6 +92,7 @@ def train(args):
     #####################
     # prepare the graphs
     #####################
+    print('--- Prepare graphs')
 
     # input placeholders
     x_in, y_in, z_in, w_in, inputs = {}, {}, {}, {}, {}
@@ -126,15 +129,27 @@ def train(args):
         opt_R[v] = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss_R[v], var_list=vars_R[v])
         loss_DR[v] = loss_D[v] - lam*loss_R[v]
         opt_DR[v] = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss_DR[v], var_list=vars_D[v])
-    
+
     #####################
-    # start the training
+    # pretrain the classifier and adversary
     #####################
+    print('--- Pretrain classifiers and adversaries.')
 
     # initialise the variables
     sess = tf.InteractiveSession()
     sess.run(tf.global_variables_initializer())
     
+    if not args.adversary == None:
+        
+        for v in var_sets:
+            actions.train(sess, opt_D[v], loss_D[v], inputs[v], generate[v], n_samples, n_pretrain_epochs, None)
+            actions.train(sess, opt_R[v], loss_R[v], inputs[v], generate[v], n_samples, n_pretrain_epochs, None)
+
+    #####################
+    # start the training
+    #####################  
+    print('--- Training')
+
     # train the classifiers
     for e in range(n_epochs):
         
@@ -145,7 +160,13 @@ def train(args):
         # training step and roc curve compuation
         npreds, nfprs, ntprs, nlabels = {}, {}, {}, {}
         for v in var_sets:
-            actions.train(sess, opt_D[v], loss_D[v], inputs[v], generate[v], n_samples, 1, None)
+
+            if args.adversary == None:
+                actions.train(sess, opt_D[v], loss_D[v], inputs[v], generate[v], n_samples, 1, None)
+            else:
+                actions.train(sess, opt_DR[v], loss_DR[v], inputs[v], generate[v], n_samples, n_clf, None)
+                actions.train(sess, opt_R[v], loss_R[v], inputs[v], generate[v], n_samples, n_adv, None)
+
             npreds[v] = utils.sigmoid(sess.run(clf_output[v], feed_dict={x_in[v]:X[v]}))
             nfprs[v], ntprs[v], _ = roc_curve(Y[v], npreds[v], sample_weight=W[v])
             nlabels[v] = 'NN {}'.format(v)
@@ -179,7 +200,7 @@ def train(args):
     for pname in ['VarsComparison', 'MassCheck']:
         dirn = 'media/plots/{}'.format(pname)
         in_pngs = ' '.join(['{d}/{n}_{c:03}.png'.format(d=dirn, n=description, c=c) for c in range(n_epochs)])
-        out_gif = 'media/gifs/{p}_{n}_{c}.gif'.format(p=pname, n=description, c=n_epochs)
+        out_gif = 'media/gifs/{p}_{n}.gif'.format(p=pname, n=description)
         os.system('convert -colors 32 -loop 0 -delay 10 {i} {o}'.format(i=in_pngs, o=out_gif))
         print(out_gif)
 
