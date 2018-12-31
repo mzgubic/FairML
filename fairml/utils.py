@@ -50,11 +50,14 @@ def submit_commands(commands, queue='normal', job_name='default'):
     ------------------------------
     """
 
+    # where to run from
+    outdir = os.path.join(PROJ, 'run')
+    if not os.path.isdir(outdir):
+        os.makedirs(outdir)
+
     # compile the job template
     job_contents = [
         '#!/bin/sh',
-        '#PBS -j oe',
-        '#PBS -q {q}'.format(q=queue),
         'cd {p}'.format(p=PROJ),
         #'export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase',
         #'alias setupATLAS=\'source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh\'',
@@ -66,21 +69,32 @@ def submit_commands(commands, queue='normal', job_name='default'):
         print(command)
         job_contents.append(command)
 
-    # where to run from
-    outdir = os.path.join(PROJ, 'run')
-    if not os.path.isdir(outdir):
-        os.makedirs(outdir)
-
     # write job contents
-    f = open( os.path.join(outdir, job_name), 'w' )
+    f = open( os.path.join(outdir, job_name+'.sh'), 'w' )
     for line in job_contents:
+        f.write( line + '\n' )
+    f.close()
+
+    # write the submit file
+    submit_contents = [
+        'executable            = {}.sh'.format(job_name),
+        'arguments             = $(ClusterID)',
+        'output                = $(ClusterId).out',
+        'error                 = $(ClusterId).err',
+        'log                   = $(ClusterId).log',
+        'queue'
+    ]
+
+    # write submit file
+    f = open( os.path.join(outdir, job_name+'.submit'), 'w' )
+    for line in submit_contents:
         f.write( line + '\n' )
     f.close()
 
     # submit the job
     os.chdir(outdir)
     print('submitting '+job_name)
-    os.system('qsub {job}'.format(job=job_name))
+    os.system('condor_submit {}.submit'.format(job_name))
     os.chdir(PROJ)
 
 
