@@ -9,7 +9,7 @@ from sklearn.metrics import roc_curve
 from sklearn.ensemble import GradientBoostingClassifier
 
 import sys
-sys.path.insert(0, os.path.abspath('../fairml'))
+sys.path.insert(0, os.path.abspath(os.path.join(os.getenv('PROJECT_DIR'), 'fairml')))
 import utils
 import plotting
 import models
@@ -122,7 +122,7 @@ def train(args):
         elif args.adversary == 'MINE':
             pass
 
-        elif args.adversary == None:
+        elif args.adversary == 'None':
             break # the for loop
 
         # optimisations and losses
@@ -139,7 +139,7 @@ def train(args):
     sess = tf.InteractiveSession()
     sess.run(tf.global_variables_initializer())
     
-    if not args.adversary == None:
+    if not args.adversary == 'None':
         
         for v in var_sets:
             actions.train(sess, opt_D[v], loss_D[v], inputs[v], generate[v], n_samples, n_pretrain_epochs, None)
@@ -161,7 +161,7 @@ def train(args):
         npreds, nfprs, ntprs, nlabels = {}, {}, {}, {}
         for v in var_sets:
 
-            if args.adversary == None:
+            if args.adversary == 'None':
                 actions.train(sess, opt_D[v], loss_D[v], inputs[v], generate[v], n_samples, 1, None)
             else:
                 actions.train(sess, opt_DR[v], loss_DR[v], inputs[v], generate[v], n_samples, n_clf, None)
@@ -222,8 +222,8 @@ def main():
                         default=0.001,
                         help='Epsilon controls the Adam algorithm oscillation near convergence.')
     parser.add_argument('--adversary',
-                        default=None,
-                        choices=[None, 'MINE', 'GaussMixNLL'],
+                        default='None',
+                        choices=['None', 'MINE', 'GaussMixNLL'],
                         help='What to use as the adversary.')
     parser.add_argument('--lam',
                         type=float,
@@ -243,7 +243,7 @@ def main():
     else:
 
         # base command
-        command = 'python3 HmumuTraining.py'
+        command = 'python3 '+os.path.join(utils.PROJ, 'scripts/HmumuTraining.py')
 
         # add the arguments
         for arg in args.__dict__:
@@ -254,7 +254,8 @@ def main():
             key = arg.replace('_', '-')
             command += ' --{k} {v}'.format(k=key, v=args.__dict__[arg])
 
-        utils.submit_commands([command], queue='veryshort', job_name='training.sh')
+        commands = ['cd scripts', command]
+        utils.submit_commands(commands, queue='veryshort', job_name='training')
 
 
 if __name__ == '__main__':
