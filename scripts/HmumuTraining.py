@@ -106,6 +106,26 @@ def train(args):
         clf_output[v], vars_D[v] = models.classifier(x_in[v], name+'_clf'+v, deep=deep)
         loss_D[v] = models.classifier_loss(clf_output[v], y_in[v], w_in[v])
         opt_D[v] = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss_D[v], var_list=vars_D[v])
+
+    # create the adversary graphs, loss, and optimisations
+    adv_output, vars_R, loss_R, opt_R, loss_DR, opt_DR = {}, {}, {}, {}, {}, {}
+    for v in var_sets:
+
+        # choose your adversary
+        if args.adversary == 'GaussMixNLL':
+            adv_output[v], vars_R[v] = models.adversary_gaussmix(clf_output[v], n_components, name+'_adv'+v)
+            loss_R[v] = models.adversary_gaussmix_loss(z_in[v], adv_output[v], n_components)
+
+        elif args.adversary == 'MINE':
+            pass
+
+        elif args.adversary == None:
+            break # the for loop
+
+        # optimisations and losses
+        opt_R[v] = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss_R[v], var_list=vars_R[v])
+        loss_DR[v] = loss_D[v] - lam*loss_R[v]
+        opt_DR[v] = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss_DR[v], var_list=vars_D[v])
     
     #####################
     # start the training
