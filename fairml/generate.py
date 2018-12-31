@@ -1,7 +1,9 @@
+import os
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
+import utils
 
 def generate_toys(n_samples, z=None):
     """
@@ -55,7 +57,7 @@ def generate_hmumu(features='low'):
     """
 
     # first, load the dataset
-    df = pd.read_csv('../data/Combined_10000.csv')
+    df = pd.read_csv(os.path.join(utils.PROJ, 'data/Combined_10000.csv'))
     n_tot = df.shape[0]
     n_sig = np.sum(df.IsSignal == 1)
     n_bkg = np.sum(df.IsSignal == 0)
