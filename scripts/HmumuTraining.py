@@ -153,10 +153,6 @@ def train(args):
     # train the classifiers
     for e in range(n_epochs):
         
-        # report on progress
-        if e%10 == 0:
-            print('{}/{}'.format(e, n_epochs))
-        
         # training step and roc curve compuation
         npreds, nfprs, ntprs, nlabels = {}, {}, {}, {}
         for v in var_sets:
@@ -181,14 +177,19 @@ def train(args):
         #path = '{d}/{n}_{c:03}.png'.format(d=dirn, n=description, c=e)
         #plotting.plot_var_sets(benchmarks, nets, path, batch=True)
 
-        # make the classifier performance plot
-        pname = 'MassCheck'
-        dirn = 'media/plots/{p}/{d}'.format(p=pname, d=description)
-        if not os.path.exists(dirn):
-            os.makedirs(dirn)
-        path = '{d}/{n}_{c:03}.png'.format(d=dirn, n=description, c=e)
-        v = 'both'
-        plotting.plot_hmumu_performance(X[v], Y[v], Z_plot[v], W[v], npreds[v].reshape(-1), benchmarks, path, batch=True)
+        # every ten training steps report on progress and make a plot
+        if e%10 == 0:
+            # report 
+            print('{}/{}'.format(e, n_epochs))
+        
+            # make the classifier performance plot
+            pname = 'MassCheck'
+            dirn = 'media/plots/{p}/{d}'.format(p=pname, d=description)
+            if not os.path.exists(dirn):
+                os.makedirs(dirn)
+            path = '{d}/{n}_{c:03}.png'.format(d=dirn, n=description, c=e)
+            v = 'both'
+            plotting.plot_hmumu_performance(X[v], Y[v], Z_plot[v], W[v], npreds[v].reshape(-1), benchmarks, path, batch=True)
 
     #####################
     # make the gif out of the plots
