@@ -24,6 +24,7 @@ def train(args):
     #####################
 
     description = utils.dict_to_unix(vars(args))
+    print(description)
 
     # hyperparameters
     n_epochs = args.n_epochs

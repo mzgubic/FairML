@@ -203,7 +203,7 @@ def generate_hmumu(features='low'):
         # get the samples from the correct generator
         next(g)
         X, Y, Z, W = g.send(n_samples)
-        print('Getting {} examples.'.format(X.shape[0]))
+        #print('Getting {} examples.'.format(X.shape[0]))
         return X, Y.reshape(-1), Z.reshape(-1), W.reshape(-1)
 
     return x_scaler, z_scaler, generate
