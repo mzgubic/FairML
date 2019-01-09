@@ -174,16 +174,16 @@ def train(args):
         nets = nfprs, ntprs, nlabels
         
         # make the variable comparison plot
-        pname = 'VarsComparison'
-        dirn = 'media/plots/{}'.format(pname)
-        if not os.path.exists(dirn):
-            os.makedirs(dirn)
-        path = '{d}/{n}_{c:03}.png'.format(d=dirn, n=description, c=e)
-        plotting.plot_var_sets(benchmarks, nets, path, batch=True)
+        #pname = 'VarsComparison'
+        #dirn = 'media/plots/{p}/{d}'.format(p=pname, d=description)
+        #if not os.path.exists(dirn):
+        #    os.makedirs(dirn)
+        #path = '{d}/{n}_{c:03}.png'.format(d=dirn, n=description, c=e)
+        #plotting.plot_var_sets(benchmarks, nets, path, batch=True)
 
         # make the classifier performance plot
         pname = 'MassCheck'
-        dirn = 'media/plots/{}'.format(pname)
+        dirn = 'media/plots/{p}/{d}'.format(p=pname, d=description)
         if not os.path.exists(dirn):
             os.makedirs(dirn)
         path = '{d}/{n}_{c:03}.png'.format(d=dirn, n=description, c=e)
@@ -197,8 +197,9 @@ def train(args):
     if not os.path.exists('media/gifs'):
         os.makedirs('media/gifs')
 
-    for pname in ['VarsComparison', 'MassCheck']:
-        dirn = 'media/plots/{}'.format(pname)
+    #for pname in ['VarsComparison', 'MassCheck']:
+    for pname in ['MassCheck']:
+        dirn = 'media/plots/{p}/{d}'.format(p=pname, d=description)
         in_pngs = ' '.join(['{d}/{n}_{c:03}.png'.format(d=dirn, n=description, c=c) for c in range(n_epochs)])
         out_gif = 'media/gifs/{p}_{n}.gif'.format(p=pname, n=description)
         os.system('convert -colors 32 -loop 0 -delay 10 {i} {o}'.format(i=in_pngs, o=out_gif))
