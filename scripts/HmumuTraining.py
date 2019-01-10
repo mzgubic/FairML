@@ -59,7 +59,7 @@ def train(args):
     X, Y, Z, W, Z_plot = {}, {}, {}, {}, {}
     
     for v in var_sets:
-        X[v], Y[v], Z[v], W[v] = generate[v](n_test_samples, balanced=False) # need Global weights for testing
+        X[v], Y[v], Z[v], W[v] = generate[v](n_test_samples, balanced=False, train=False) # need Global weights for testing
         Z_plot[v] = z_scaler[v].inverse_transform(Z[v], copy=True)
     
     #####################
