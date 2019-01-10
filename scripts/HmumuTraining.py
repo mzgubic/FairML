@@ -58,7 +58,7 @@ def train(args):
     n_test_samples = 100000 # TODO: have 'all' option in the generate function
     n_spur_samples = 100000
     X, Y, Z, W, Z_plot = {}, {}, {}, {}, {}
-    X_ss, Y_ss, Y_ss, W_ss, Z_ss_plot = {}, {}, {}, {}, {}
+    X_ss, Y_ss, Z_ss, W_ss, Z_ss_plot = {}, {}, {}, {}, {}
     
     for v in var_sets:
         X[v], Y[v], Z[v], W[v] = generate[v](n_test_samples, balanced=False, train=False) # need Global weights for testing
@@ -78,7 +78,7 @@ def train(args):
         X_train[v], Y_train[v], _, W_train[v] = generate[v](n_train_samples, balanced=True)
     
     # train
-    gbc400, preds400, fpr400, tpr400 = {}, {}, {}, {}
+    gbc400, preds400, preds400_ss, fpr400, tpr400 = {}, {}, {}, {}, {}
     
     for v in var_sets:
     
@@ -86,6 +86,7 @@ def train(args):
         gbc400[v] = GradientBoostingClassifier(n_estimators=400)
         gbc400[v].fit(X_train[v], Y_train[v], sample_weight=W_train[v])
         preds400[v] = gbc400[v].predict_proba(X[v])[:, 1]
+        preds400_ss[v] = gbc400[v].predict_proba(X_ss[v])[:, 1]
     
         # roc curve
         fpr400[v], tpr400[v], _ = roc_curve(Y[v], preds400[v], sample_weight=W[v])
@@ -160,7 +161,7 @@ def train(args):
     # train the classifiers
     for e in range(n_epochs):
         
-        # training step and roc curve compuation
+        # training step and roc curve computation
         npreds, nfprs, ntprs, nlabels = {}, {}, {}, {}
         for v in var_sets:
 
@@ -174,29 +175,34 @@ def train(args):
             nfprs[v], ntprs[v], _ = roc_curve(Y[v], npreds[v], sample_weight=W[v])
             nlabels[v] = 'NN {}'.format(v)
         
+        # ROC curves for the neural net
         nets = nfprs, ntprs, nlabels
         
-        # make the variable comparison plot
-        #pname = 'VarsComparison'
-        #dirn = 'media/plots/{p}/{d}'.format(p=pname, d=description)
-        #if not os.path.exists(dirn):
-        #    os.makedirs(dirn)
-        #path = '{d}/{n}_{c:03}.png'.format(d=dirn, n=description, c=e)
-        #plotting.plot_var_sets(benchmarks, nets, path, batch=True)
-
         # every ten training steps report on progress and make a plot
         if e%10 == 0:
-            # report 
+
+            # report and set variables to both low and high level (only plot those)
             print('{}/{}'.format(e, n_epochs))
+            v = 'both'
+
+            def get_path(pname, c):
+                dirn = 'media/plots/{p}/{d}'.format(p=pname, d=description)
+                if not os.path.exists(dirn):
+                    os.makedirs(dirn)
+                path = '{d}/{n}_{c:03}.png'.format(d=dirn, n=description, c=e)
+                return path
         
             # make the classifier performance plot
-            pname = 'MassCheck'
-            dirn = 'media/plots/{p}/{d}'.format(p=pname, d=description)
-            if not os.path.exists(dirn):
-                os.makedirs(dirn)
-            path = '{d}/{n}_{c:03}.png'.format(d=dirn, n=description, c=e)
-            v = 'both'
+            path = get_path('MassCheck', e)
             plotting.plot_hmumu_performance(X[v], Y[v], Z_plot[v], W[v], npreds[v].reshape(-1), benchmarks, path, batch=True)
+
+            # make the variables comparison plot
+            path = get_path('VarsComparison', e)
+            #plotting.plot_var_sets(benchmarks, nets, path, batch=True)
+
+            # make the spurious signal test plot
+            path = get_path('SpuriousSignal', e)
+            #plotting.plot_spurious_signal(Z_ss_plot[v], preds400_ss)
 
     #####################
     # make the gif out of the plots
@@ -205,7 +211,6 @@ def train(args):
     if not os.path.exists('media/gifs'):
         os.makedirs('media/gifs')
 
-    #for pname in ['VarsComparison', 'MassCheck']:
     for pname in ['MassCheck']:
         dirn = 'media/plots/{p}/{d}'.format(p=pname, d=description)
         in_pngs = ' '.join(['{d}/{n}_{c:03}.png'.format(d=dirn, n=description, c=c) for c in range(n_epochs) if c%10==0])
