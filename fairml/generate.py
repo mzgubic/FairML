@@ -209,4 +209,95 @@ def generate_hmumu(features='low'):
 
     return x_scaler, z_scaler, generate
 
+def generate_ss(features='low'):
+    """
+    Get a convenience function which generates hmumu events for spurious signal evaluation.
+
+    Args:
+        features (string): Which features are used in the dataset. Can be 'low', 'high', or 'both'.
+
+    Returns:
+        generate (function): Function which samples instances of the data
+    """
+
+    # first, load the dataset
+    df = pd.read_csv(os.path.join(utils.PROJ, 'data/SpuriousSignal_1000.csv'))
+    n_tot = df.shape[0]
+    n_sig = np.sum(df.IsSignal == 1)
+    n_bkg = np.sum(df.IsSignal == 0)
+    print('------------------------')
+    print('{} signal events.'.format(n_sig))
+    print('{} background events.'.format(n_bkg))
+    print('------------------------')
+
+    # create the X, Y, Z, W frames
+    def create_frames(df, features):
+
+        low_level = ['Muons_Eta_Lead', 'Muons_Eta_Sub', 'Muons_Phi_Lead', 'Muons_Phi_Sub', 'Muons_PT_Lead', 'Muons_PT_Sub']
+        high_level = ['Z_PT', 'Muons_CosThetaStar']
+
+        if features == 'low':
+            X_names = low_level
+        elif features == 'high':
+            X_names = high_level
+        elif features == 'both':
+            X_names = low_level+high_level
+
+        Z_names = ['Muons_Minv_MuMu']
+        Y_names = ['IsSignal']
+        W_names = ['GlobalWeight']
+
+        X = df[X_names]
+        Z = df[Z_names]
+        Y = df[Y_names].values
+        W = df[W_names].values
+
+        return X, Y, Z, W
+
+    X, Y, Z, W = create_frames(df, features)
+
+    # create generator instances (called in the convenience function later on)
+    X_tr, X_te, Y_tr, Y_te, Z_tr, Z_te, W_tr, W_te = train_test_split(scaled_X, Y, scaled_Z, W, random_state=42, test_size=0.2)
+
+    balanced_train   = generator(X_tr, Y_tr, Z_tr, W_tr, balanced=True)
+    imbalanced_train = generator(X_tr, Y_tr, Z_tr, W_tr, balanced=False)
+    balanced_test    = generator(X_te, Y_te, Z_te, W_te, balanced=True)
+    imbalanced_test  = generator(X_te, Y_te, Z_te, W_te, balanced=False)
+
+    # and return the convenience function which calls the correct instance of the generator
+    def generate(n_samples, train=True, balanced=True):
+        """
+        Sample hmumu events with replacement.
+
+        Args:
+            n_samples (int): how many events to sample.
+            train (bool): sample train or test part of the dataset.
+            balanced (bool): sample balanced or unbalanced (sig vs bkg) events.
+
+        Returns:
+            X, Y, Z, W (arrays): features, targets, sensitive attributes, weights.
+        """
+
+        # choose the correct generator
+        if balanced and train:
+            g = balanced_train
+
+        elif not balanced and train:
+            g = imbalanced_train
+
+        elif balanced and not train:
+            print('Go home, you are drunk. Do you really want to test on balanced dataset?')
+            g = balanced_test
+
+        elif not balanced and not train:
+            g = imbalanced_test
+            
+        # get the samples from the correct generator
+        next(g)
+        X, Y, Z, W = g.send(n_samples)
+        #print('Getting {} examples.'.format(X.shape[0]))
+        return X, Y.reshape(-1), Z.reshape(-1), W.reshape(-1)
+
+    return x_scaler, z_scaler, generate
+
 

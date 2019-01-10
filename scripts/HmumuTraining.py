@@ -39,18 +39,20 @@ def train(args):
     n_adv = 5
     name = 'model'
 
+    var_sets = ['low', 'high', 'both']
+    var_sets = ['both']
+
     #####################
-    # Generate test data
+    # Generate test data (performance and spurious signal)
     #####################
     print('--- Generate test data')
 
-    var_sets = ['low', 'high', 'both']
-    
     # get the scalers, and the convenince function
-    x_scaler, z_scaler, generate = {}, {}, {}
+    x_scaler, z_scaler, generate, generate_ss = {}, {}, {}, {}
     
     for v in var_sets:
-        x_scaler[v], z_scaler[v], generate[v] = G.generate_hmumu(features=v)
+        #x_scaler[v], z_scaler[v], generate[v] = G.generate_hmumu(features=v)
+        generate_ss[v] = G.generate_ss(features=v)
     
     # generate test data (a large, one time only thing)
     n_test_samples = 100000 # TODO: have 'all' option in the generate function
