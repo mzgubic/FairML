@@ -209,7 +209,7 @@ def generate_hmumu(features='low'):
 
     return x_scaler, z_scaler, generate
 
-def generate_ss(features='low'):
+def generate_ss(features, x_scaler, z_scaler):
     """
     Get a convenience function which generates hmumu events for spurious signal evaluation.
 
@@ -217,7 +217,7 @@ def generate_ss(features='low'):
         features (string): Which features are used in the dataset. Can be 'low', 'high', or 'both'.
 
     Returns:
-        generate (function): Function which samples instances of the data
+        generate (function): Function which samples instances of the data. Need to be normalised.
     """
 
     # first, load the dataset
@@ -256,16 +256,18 @@ def generate_ss(features='low'):
 
     X, Y, Z, W = create_frames(df, features)
 
+    # scale the vars
+    scaled_X = x_scaler.transform(X)
+    scaled_Z = z_scaler.transform(Z)
+
     # create generator instances (called in the convenience function later on)
     X_tr, X_te, Y_tr, Y_te, Z_tr, Z_te, W_tr, W_te = train_test_split(scaled_X, Y, scaled_Z, W, random_state=42, test_size=0.2)
 
-    balanced_train   = generator(X_tr, Y_tr, Z_tr, W_tr, balanced=True)
-    imbalanced_train = generator(X_tr, Y_tr, Z_tr, W_tr, balanced=False)
-    balanced_test    = generator(X_te, Y_te, Z_te, W_te, balanced=True)
-    imbalanced_test  = generator(X_te, Y_te, Z_te, W_te, balanced=False)
+    train_gen = generator(X_tr, Y_tr, Z_tr, W_tr, balanced=False)
+    test_gen = generator(X_te, Y_te, Z_te, W_te, balanced=False)
 
     # and return the convenience function which calls the correct instance of the generator
-    def generate(n_samples, train=True, balanced=True):
+    def generate(n_samples, train=True):
         """
         Sample hmumu events with replacement.
 
@@ -279,25 +281,17 @@ def generate_ss(features='low'):
         """
 
         # choose the correct generator
-        if balanced and train:
-            g = balanced_train
+        if train:
+            g = train_gen
 
-        elif not balanced and train:
-            g = imbalanced_train
-
-        elif balanced and not train:
-            print('Go home, you are drunk. Do you really want to test on balanced dataset?')
-            g = balanced_test
-
-        elif not balanced and not train:
-            g = imbalanced_test
+        elif not train:
+            g = test_gen
             
         # get the samples from the correct generator
         next(g)
         X, Y, Z, W = g.send(n_samples)
-        #print('Getting {} examples.'.format(X.shape[0]))
         return X, Y.reshape(-1), Z.reshape(-1), W.reshape(-1)
 
-    return x_scaler, z_scaler, generate
+    return generate
 
 

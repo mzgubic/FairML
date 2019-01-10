@@ -51,16 +51,20 @@ def train(args):
     x_scaler, z_scaler, generate, generate_ss = {}, {}, {}, {}
     
     for v in var_sets:
-        #x_scaler[v], z_scaler[v], generate[v] = G.generate_hmumu(features=v)
-        generate_ss[v] = G.generate_ss(features=v)
+        x_scaler[v], z_scaler[v], generate[v] = G.generate_hmumu(features=v)
+        generate_ss[v] = G.generate_ss(features=v, x_scaler=x_scaler[v], z_scaler=z_scaler[v])
     
     # generate test data (a large, one time only thing)
     n_test_samples = 100000 # TODO: have 'all' option in the generate function
+    n_spur_samples = 100000
     X, Y, Z, W, Z_plot = {}, {}, {}, {}, {}
+    X_ss, Y_ss, Y_ss, W_ss, Z_ss_plot = {}, {}, {}, {}, {}
     
     for v in var_sets:
         X[v], Y[v], Z[v], W[v] = generate[v](n_test_samples, balanced=False, train=False) # need Global weights for testing
         Z_plot[v] = z_scaler[v].inverse_transform(Z[v], copy=True)
+        X_ss[v], Y_ss[v], Z_ss[v], W_ss[v] = generate[v](n_spur_samples, train=True) # training set is 80%
+        Z_ss_plot[v] = z_scaler[v].inverse_transform(Z_ss[v], copy=True)
     
     #####################
     # Create GBC benchmarks
