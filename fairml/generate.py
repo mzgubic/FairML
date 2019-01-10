@@ -5,6 +5,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 import utils
 
+random_state = 42
+
 def generate_toys(n_samples, z=None):
     """
     Convenience function which generates toy examples on the fly.
@@ -41,6 +43,72 @@ def generate_toys(n_samples, z=None):
     Z = s[:, 3]
 
     return X, Y, Z
+
+
+def generator(X, Y, Z, W, balanced=False):
+    """
+    Create a generator sampling from inputs datasets.
+
+    Args:
+        X, Y, Z, W (arrays): features, targets, sensitive attributes, weights.
+        balanced (bool): sample balanced or unbalanced (sig vs bkg) events.
+
+    Yields:
+        X, Y, Z, W (arrays): samples from the input datasets.
+    """
+
+    while True:
+
+        n_samples = yield # feed how many samples you'd like in each iteration (using send method)
+
+        # balanced classes (training)
+        # ----------------
+        # - same number of sig/bkg classes
+        # - equal total weights for both
+        if balanced:
+
+            # create separate sig and bkg frames
+            sig_ind = (Y == 1).reshape(-1)
+            n_sig = np.sum(sig_ind)
+            X_sig = X[sig_ind, :]
+        
+            Y_sig = Y[sig_ind, :]
+            Z_sig = Z[sig_ind, :]
+            W_sig = W[sig_ind, :]
+        
+            bkg_ind = (Y == 0).reshape(-1)
+            n_bkg = np.sum(bkg_ind)
+            X_bkg = X[bkg_ind, :]
+            Y_bkg = Y[bkg_ind, :]
+            Z_bkg = Z[bkg_ind, :]
+            W_bkg = W[bkg_ind, :]
+
+            # sample sig events
+            indices = np.random.randint(0, n_sig, size=n_samples//2)
+            xs, ys, zs, ws = X_sig[indices, :], Y_sig[indices, :], Z_sig[indices, :], W_sig[indices, :]
+
+            # sample bkg events
+            indices = np.random.randint(0, n_bkg, size=n_samples//2)
+            xb, yb, zb, wb = X_bkg[indices, :], Y_bkg[indices, :], Z_bkg[indices, :], W_bkg[indices, :]
+
+            # normalise the weights
+            ws_tot = np.sum(ws)
+            wb_tot = np.sum(wb)
+            ws = ws * (1.0/ws_tot)
+            wb = wb * (1.0/wb_tot)
+
+            yield np.vstack([xs,xb]), np.vstack([ys,yb]), np.vstack([zs,zb]), np.vstack([ws,wb])
+
+        # imbalanced classes (evaluation)
+        # ----------------
+        # - do not change the underlying class distributions
+        # - use Global (physical) weights
+        else:
+
+            # sample mixed events
+            n_tot = X.shape[0]
+            indices = np.random.randint(0, n_tot, size=n_samples)
+            yield X[indices, :], Y[indices, :], Z[indices, :], W[indices, :]
 
 
 def generate_hmumu(features='low'):
@@ -98,74 +166,8 @@ def generate_hmumu(features='low'):
     scaled_X = x_scaler.fit_transform(X)
     scaled_Z = z_scaler.fit_transform(Z)
 
-    # define a generator which randomly samples the data
-    def generator(X, Y, Z, W, balanced=False):
-        """
-        Create a generator sampling from inputs datasets.
-
-        Args:
-            X, Y, Z, W (arrays): features, targets, sensitive attributes, weights.
-            balanced (bool): sample balanced or unbalanced (sig vs bkg) events.
-
-        Yields:
-            X, Y, Z, W (arrays): samples from the input datasets.
-        """
-
-        while True:
-
-            n_samples = yield # feed how many samples you'd like in each iteration (using send method)
-
-            # balanced classes (training)
-            # ----------------
-            # - same number of sig/bkg classes
-            # - equal total weights for both
-            if balanced:
-
-                # create separate sig and bkg frames
-                sig_ind = (Y == 1).reshape(-1)
-                n_sig = np.sum(sig_ind)
-                X_sig = X[sig_ind, :]
-            
-                Y_sig = Y[sig_ind, :]
-                Z_sig = Z[sig_ind, :]
-                W_sig = W[sig_ind, :]
-            
-                bkg_ind = (Y == 0).reshape(-1)
-                n_bkg = np.sum(bkg_ind)
-                X_bkg = X[bkg_ind, :]
-                Y_bkg = Y[bkg_ind, :]
-                Z_bkg = Z[bkg_ind, :]
-                W_bkg = W[bkg_ind, :]
-
-                # sample sig events
-                indices = np.random.randint(0, n_sig, size=n_samples//2)
-                xs, ys, zs, ws = X_sig[indices, :], Y_sig[indices, :], Z_sig[indices, :], W_sig[indices, :]
-
-                # sample bkg events
-                indices = np.random.randint(0, n_bkg, size=n_samples//2)
-                xb, yb, zb, wb = X_bkg[indices, :], Y_bkg[indices, :], Z_bkg[indices, :], W_bkg[indices, :]
-
-                # normalise the weights
-                ws_tot = np.sum(ws)
-                wb_tot = np.sum(wb)
-                ws = ws * (1.0/ws_tot)
-                wb = wb * (1.0/wb_tot)
-
-                yield np.vstack([xs,xb]), np.vstack([ys,yb]), np.vstack([zs,zb]), np.vstack([ws,wb])
-
-            # imbalanced classes (evaluation)
-            # ----------------
-            # - do not change the underlying class distributions
-            # - use Global (physical) weights
-            else:
-
-                # sample mixed events
-                n_tot = X.shape[0]
-                indices = np.random.randint(0, n_tot, size=n_samples)
-                yield X[indices, :], Y[indices, :], Z[indices, :], W[indices, :]
-
     # create generator instances (called in the convenience function later on)
-    X_tr, X_te, Y_tr, Y_te, Z_tr, Z_te, W_tr, W_te = train_test_split(scaled_X, Y, scaled_Z, W, random_state=42, test_size=0.2)
+    X_tr, X_te, Y_tr, Y_te, Z_tr, Z_te, W_tr, W_te = train_test_split(scaled_X, Y, scaled_Z, W, random_state=random_state, test_size=0.2)
 
     balanced_train   = generator(X_tr, Y_tr, Z_tr, W_tr, balanced=True)
     imbalanced_train = generator(X_tr, Y_tr, Z_tr, W_tr, balanced=False)
@@ -203,7 +205,6 @@ def generate_hmumu(features='low'):
         # get the samples from the correct generator
         next(g)
         X, Y, Z, W = g.send(n_samples)
-        #print('Getting {} examples.'.format(X.shape[0]))
         return X, Y.reshape(-1), Z.reshape(-1), W.reshape(-1)
 
     return x_scaler, z_scaler, generate
