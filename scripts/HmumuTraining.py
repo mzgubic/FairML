@@ -63,7 +63,7 @@ def train(args):
     for v in var_sets:
         X[v], Y[v], Z[v], W[v] = generate[v](n_test_samples, balanced=False, train=False) # need Global weights for testing
         Z_plot[v] = z_scaler[v].inverse_transform(Z[v], copy=True)
-        X_ss[v], Y_ss[v], Z_ss[v], W_ss[v] = generate[v](n_spur_samples, train=True) # training set is 80%
+        X_ss[v], Y_ss[v], Z_ss[v], W_ss[v] = generate_ss[v](n_spur_samples, train=True) # training set is 80%
         Z_ss_plot[v] = z_scaler[v].inverse_transform(Z_ss[v], copy=True)
     
     #####################
@@ -197,12 +197,14 @@ def train(args):
             plotting.plot_hmumu_performance(X[v], Y[v], Z_plot[v], W[v], npreds[v].reshape(-1), benchmarks, path, batch=True)
 
             # make the variables comparison plot
-            path = get_path('VarsComparison', e)
+            #path = get_path('VarsComparison', e)
             #plotting.plot_var_sets(benchmarks, nets, path, batch=True)
 
             # make the spurious signal test plot
-            path = get_path('SpuriousSignal', e)
-            #plotting.plot_spurious_signal(Z_ss_plot[v], preds400_ss)
+            percentiles = [10, 1]
+            for p in percentiles:
+                path = get_path('SpuriousSignal{}'.format(p), e)
+                plotting.plot_spurious_signal(Z_ss_plot[v], preds400_ss[v], p, path, batch=True)
 
     #####################
     # make the gif out of the plots

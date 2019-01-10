@@ -303,3 +303,33 @@ def plot_var_sets(benchmarks, nets, pname, batch=False):
     plt.close(fig)
 
 
+def plot_spurious_signal(Z, preds400, percentile, path, batch=False):
+
+    # get the percentile values
+    preds400_percentile = np.percentile(preds400, 100-percentile)
+
+    # get the mass distros
+    gbc_Zs = Z[preds400 > preds400_percentile]
+
+    # plot
+    bins=100
+
+    fig, ax = plt.subplots(figsize=(7,7))
+    fig.suptitle(os.path.basename(path).split('.')[0])
+    ax.hist(Z,      bins=bins, range=(110,160), histtype='step', color=utils.oxford_blue, label='All events')
+    ax.hist(gbc_Zs, bins=bins, range=(110,160), histtype='step', color=utils.blue, label='GBC best {}%'.format(percentile))
+    ax.legend(loc='best')
+    ax.set_xlabel('Invariant Mass [GeV]')
+    ax.set_ylabel('Events')
+
+    # save
+    plt.savefig(path)
+    if not batch:
+        plt.show()
+    plt.close(fig)
+
+
+
+
+
+
