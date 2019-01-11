@@ -205,7 +205,7 @@ def plot_toy_variates(X, Y, Z):
 
 
 def plot_hmumu_performance(X, Y, Z, W, fX, benchmarks, pname, batch=False):
-    
+
     # unpack benchmarks
     fprs, tprs, titles = benchmarks 
 
@@ -273,13 +273,14 @@ def plot_hmumu_performance(X, Y, Z, W, fX, benchmarks, pname, batch=False):
     
     # save
     plt.savefig(pname)
+    print(pname)
     if not batch:
         plt.show()
     plt.close(fig)
 
 
 def plot_var_sets(benchmarks, nets, pname, batch=False):
-    
+
     # unpack inputs
     fprs, tprs, labels = benchmarks
     nfprs, ntprs, nlabels = nets
@@ -298,32 +299,40 @@ def plot_var_sets(benchmarks, nets, pname, batch=False):
     
     # save
     plt.savefig(pname)
+    print(pname)
     if not batch:
         plt.show()
     plt.close(fig)
 
 
-def plot_spurious_signal(Z, preds400, percentile, path, batch=False):
+def plot_spurious_signal(Z, preds400, npreds, percentile, path, batch=False):
+
+    # reshape
+    npreds = npreds.reshape(-1) # column to row
 
     # get the percentile values
-    preds400_percentile = np.percentile(preds400, 100-percentile)
+    preds400_cut = np.percentile(preds400, 100-percentile)
+    npreds_cut = np.percentile(npreds, 100-percentile)
 
     # get the mass distros
-    gbc_Zs = Z[preds400 > preds400_percentile]
+    gbc_Zs = Z[preds400 > preds400_cut]
+    dnn_Zs = Z[npreds > npreds_cut]
 
     # plot
     bins=100
 
     fig, ax = plt.subplots(figsize=(7,7))
     fig.suptitle(os.path.basename(path).split('.')[0])
-    ax.hist(Z,      bins=bins, range=(110,160), histtype='step', color=utils.oxford_blue, label='All events')
-    ax.hist(gbc_Zs, bins=bins, range=(110,160), histtype='step', color=utils.blue, label='GBC best {}%'.format(percentile))
+    ax.hist(Z,      bins=bins, range=(110,160), histtype='step', color='k', linestyle='-', label='All events')
+    ax.hist(gbc_Zs, bins=bins, range=(110,160), histtype='step', color='k', linestyle=':', label='GBC best {}%'.format(percentile))
+    ax.hist(dnn_Zs, bins=bins, range=(110,160), histtype='step', color=utils.oxford_blue, linestyle='-', label='DNN best {}%'.format(percentile))
     ax.legend(loc='best')
     ax.set_xlabel('Invariant Mass [GeV]')
     ax.set_ylabel('Events')
 
     # save
     plt.savefig(path)
+    print(path)
     if not batch:
         plt.show()
     plt.close(fig)

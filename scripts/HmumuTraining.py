@@ -162,7 +162,7 @@ def train(args):
     for e in range(n_epochs):
         
         # training step and roc curve computation
-        npreds, nfprs, ntprs, nlabels = {}, {}, {}, {}
+        npreds, nfprs, ntprs, nlabels, npreds_ss = {}, {}, {}, {}, {}
         for v in var_sets:
 
             if args.adversary == 'None':
@@ -171,9 +171,13 @@ def train(args):
                 actions.train(sess, opt_DR[v], loss_DR[v], inputs[v], generate[v], n_samples, n_clf, None)
                 actions.train(sess, opt_R[v], loss_R[v], inputs[v], generate[v], n_samples, n_adv, None)
 
+            # run on test
             npreds[v] = utils.sigmoid(sess.run(clf_output[v], feed_dict={x_in[v]:X[v]}))
             nfprs[v], ntprs[v], _ = roc_curve(Y[v], npreds[v], sample_weight=W[v])
             nlabels[v] = 'NN {}'.format(v)
+
+            # run on ss
+            npreds_ss[v] = utils.sigmoid(sess.run(clf_output[v], feed_dict={x_in[v]:X_ss[v]}))
         
         # ROC curves for the neural net
         nets = nfprs, ntprs, nlabels
@@ -189,7 +193,7 @@ def train(args):
                 dirn = 'media/plots/{p}/{d}'.format(p=pname, d=description)
                 if not os.path.exists(dirn):
                     os.makedirs(dirn)
-                path = '{d}/{n}_{c:03}.png'.format(d=dirn, n=description, c=e)
+                path = '{d}/{n}_{c:03}.pdf'.format(d=dirn, n=description, c=e)
                 return path
         
             # make the classifier performance plot
@@ -204,7 +208,7 @@ def train(args):
             percentiles = [10, 1]
             for p in percentiles:
                 path = get_path('SpuriousSignal{}'.format(p), e)
-                plotting.plot_spurious_signal(Z_ss_plot[v], preds400_ss[v], p, path, batch=True)
+                plotting.plot_spurious_signal(Z_ss_plot[v], preds400_ss[v], npreds_ss[v], p, path, batch=True)
 
     #####################
     # make the gif out of the plots
