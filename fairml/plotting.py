@@ -221,7 +221,7 @@ def plot_hmumu_performance(X, Y, Z, W, fX, benchmarks, pname, batch=False):
     
     # ROC curve
     fig, ax = plt.subplots(3, 2, figsize=(10,15))
-    fig.suptitle(os.path.basename(pname).split('.')[0])
+    fig.suptitle(os.path.basename(pname).split('.')[0], fontsize=10)
     fpr_all, tpr_all, _ = roc_curve(Y, fX, sample_weight=W)
     fpr_hi, tpr_hi, _ = roc_curve(Y_hi_all, fX_hi_all, sample_weight=W_hi_all)
     fpr_mi, tpr_mi, _ = roc_curve(Y_mi_all, fX_mi_all, sample_weight=W_mi_all)
@@ -288,7 +288,7 @@ def plot_var_sets(benchmarks, nets, pname, batch=False):
     
     # plot
     fig, ax = plt.subplots(figsize=(7,7))
-    fig.suptitle(os.path.basename(pname).split('.')[0])
+    fig.suptitle(os.path.basename(pname).split('.')[0], fontsize=10)
     lstyles = {'low':':', 'high':'--', 'both':'-'}
     for v in var_sets:
         ax.plot(1-fprs[v], tprs[v], label=labels[v], c='k', linestyle=lstyles[v])
@@ -328,16 +328,16 @@ def plot_spurious_signal(Z, preds400, predsDNN, percentile, path, batch=False):
     bins=100
 
     fig, ax = plt.subplots(2, 1, figsize=(7,7), sharex=True, gridspec_kw={'height_ratios':[3,1]})
-    fig.suptitle(os.path.basename(path).split('.')[0])
+    fig.suptitle(os.path.basename(path).split('.')[0], fontsize=10)
 
     # top panel
     lstyles = {'low':':', 'high':'--', 'both':'-'}
     xlow, xhigh = 110, 160
     gbc_hist, dnn_hist = {}, {}
     for v in var_sets:
-        # todo: try passing common kwargs
-        gbc_hist[v], _, _ = ax[0].hist(gbc_Zs[v], bins=bins, range=(xlow,xhigh), histtype='step', linestyle=lstyles[v], color='k', label='GBC ({}) best {}%'.format(v, percentile))
-        dnn_hist[v], _, _ = ax[0].hist(dnn_Zs[v], bins=bins, range=(xlow,xhigh), histtype='step', linestyle=lstyles[v], color=utils.blue, label='DNN ({}) best {}%'.format(v, percentile))
+        common_kwargs = {'bins':bins, 'range':(xlow,xhigh), 'histtype':'step', 'linestyle':lstyles[v]}
+        gbc_hist[v], _, _ = ax[0].hist(gbc_Zs[v], color='k', label='GBC ({}) best {}%'.format(v, percentile), **common_kwargs)
+        dnn_hist[v], _, _ = ax[0].hist(dnn_Zs[v], color=utils.blue, label='DNN ({}) best {}%'.format(v, percentile), **common_kwargs)
     ax[0].set_title('Background-only MC')
     ax[0].legend(loc='best')
     ax[0].set_xlim(xlow, xhigh)
@@ -351,8 +351,9 @@ def plot_spurious_signal(Z, preds400, predsDNN, percentile, path, batch=False):
 
     ax[1].plot([xlow, xhigh], [percentile/100., percentile/100.], 'k:')
     for v in var_sets:
-        ax[1].hist(centres, weights=gbc_hist[v]/Z_hist, bins=bins, range=(xlow,xhigh), histtype='step', linestyle=lstyles[v], color='k')
-        ax[1].hist(centres, weights=dnn_hist[v]/Z_hist, bins=bins, range=(xlow,xhigh), histtype='step', linestyle=lstyles[v], color=utils.blue)
+        common_kwargs = {'bins':bins, 'range':(xlow,xhigh), 'histtype':'step', 'linestyle':lstyles[v]}
+        ax[1].hist(centres, weights=gbc_hist[v]/Z_hist, color='k', **common_kwargs)
+        ax[1].hist(centres, weights=dnn_hist[v]/Z_hist, color=utils.blue, **common_kwargs)
     ax[1].set_xlim(xlow, xhigh)
     ax[1].set_ylabel('Selected/All ratio')
     ax[1].set_xlabel('Invariant Mass [GeV]')
