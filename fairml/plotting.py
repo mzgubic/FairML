@@ -289,10 +289,10 @@ def plot_var_sets(benchmarks, nets, pname, batch=False):
     # plot
     fig, ax = plt.subplots(figsize=(7,7))
     fig.suptitle(os.path.basename(pname).split('.')[0])
-    cols = {'low':utils.light_blue, 'high':utils.blue, 'both':utils.oxford_blue}
+    lstyles = {'low':':', 'high':'--', 'both':'-'}
     for v in var_sets:
-        ax.plot(1-fprs[v], tprs[v], label=labels[v], c=cols[v], linestyle=':')
-        ax.plot(1-nfprs[v], ntprs[v], label=nlabels[v], c=cols[v], linestyle='-')
+        ax.plot(1-fprs[v], tprs[v], label=labels[v], c='k', linestyle=lstyles[v])
+        ax.plot(1-nfprs[v], ntprs[v], label=nlabels[v], c=utils.blue, linestyle=lstyles[v])
     ax.legend(loc='best')
     ax.set_xlabel('Background rejection')
     ax.set_ylabel('Signal efficiency')
@@ -305,27 +305,34 @@ def plot_var_sets(benchmarks, nets, pname, batch=False):
     plt.close(fig)
 
 
-def plot_spurious_signal(Z, preds400, npreds, percentile, path, batch=False):
+def plot_spurious_signal(Z, preds400, predsDNN, percentile, path, batch=False):
 
-    # reshape
-    npreds = npreds.reshape(-1) # column to row
-
-    # get the percentile values
-    preds400_cut = np.percentile(preds400, 100-percentile)
-    npreds_cut = np.percentile(npreds, 100-percentile)
+    # get var list
+    var_sets = list(Z.keys())
 
     # get the mass distros
-    gbc_Zs = Z[preds400 > preds400_cut]
-    dnn_Zs = Z[npreds > npreds_cut]
+    preds400_cut, predsDNN_cut, gbc_Zs, dnn_Zs = {}, {}, {}, {}
+    for v in var_sets:
+        # reshape
+        predsDNN[v] = predsDNN[v].reshape(-1) # column to row
+
+        # get the percentile values
+        preds400_cut[v] = np.percentile(preds400[v], 100-percentile)
+        predsDNN_cut[v] = np.percentile(predsDNN[v], 100-percentile)
+
+        # get the mass distros
+        gbc_Zs[v] = Z[v][preds400[v] > preds400_cut[v]]
+        dnn_Zs[v] = Z[v][predsDNN[v] > predsDNN_cut[v]]
 
     # plot
     bins=100
 
     fig, ax = plt.subplots(figsize=(7,7))
     fig.suptitle(os.path.basename(path).split('.')[0])
-    ax.hist(Z,      bins=bins, range=(110,160), histtype='step', color='k', linestyle='-', label='All events')
-    ax.hist(gbc_Zs, bins=bins, range=(110,160), histtype='step', color='k', linestyle=':', label='GBC best {}%'.format(percentile))
-    ax.hist(dnn_Zs, bins=bins, range=(110,160), histtype='step', color=utils.oxford_blue, linestyle='-', label='DNN best {}%'.format(percentile))
+    lstyles = {'low':':', 'high':'--', 'both':'-'}
+    for v in var_sets:
+        ax.hist(gbc_Zs[v], bins=bins, range=(110,160), histtype='step', linestyle=lstyles[v], color='k', label='GBC ({}) best {}%'.format(v, percentile))
+        ax.hist(dnn_Zs[v], bins=bins, range=(110,160), histtype='step', linestyle=lstyles[v], color=utils.blue, label='DNN ({}) best {}%'.format(v, percentile))
     ax.legend(loc='best')
     ax.set_xlabel('Invariant Mass [GeV]')
     ax.set_ylabel('Events')

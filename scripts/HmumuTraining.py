@@ -40,7 +40,7 @@ def train(args):
     name = 'model'
 
     var_sets = ['low', 'high', 'both']
-    var_sets = ['both']
+    #var_sets = ['both']
 
     #####################
     # Generate test data (performance and spurious signal)
@@ -174,7 +174,7 @@ def train(args):
             # run on test
             npreds[v] = utils.sigmoid(sess.run(clf_output[v], feed_dict={x_in[v]:X[v]}))
             nfprs[v], ntprs[v], _ = roc_curve(Y[v], npreds[v], sample_weight=W[v])
-            nlabels[v] = 'NN {}'.format(v)
+            nlabels[v] = 'NN ({})'.format(v)
 
             # run on ss
             npreds_ss[v] = utils.sigmoid(sess.run(clf_output[v], feed_dict={x_in[v]:X_ss[v]}))
@@ -197,18 +197,19 @@ def train(args):
                 return path
         
             # make the classifier performance plot
-            path = get_path('MassCheck', e)
-            plotting.plot_hmumu_performance(X[v], Y[v], Z_plot[v], W[v], npreds[v].reshape(-1), benchmarks, path, batch=True)
+            #path = get_path('MassCheck', e)
+            #plotting.plot_hmumu_performance(X[v], Y[v], Z_plot[v], W[v], npreds[v].reshape(-1), benchmarks, path, batch=True)
 
             # make the variables comparison plot
-            #path = get_path('VarsComparison', e)
-            #plotting.plot_var_sets(benchmarks, nets, path, batch=True)
+            path = get_path('VarsComparison', e)
+            plotting.plot_var_sets(benchmarks, nets, path, batch=True)
 
             # make the spurious signal test plot
-            percentiles = [10, 1]
+            percentiles = [50]
             for p in percentiles:
                 path = get_path('SpuriousSignal{}'.format(p), e)
-                plotting.plot_spurious_signal(Z_ss_plot[v], preds400_ss[v], npreds_ss[v], p, path, batch=True)
+                #plotting.plot_spurious_signal(Z_ss_plot[v], preds400_ss[v], npreds_ss[v], p, path, batch=True)
+                plotting.plot_spurious_signal(Z_ss_plot, preds400_ss, npreds_ss, p, path, batch=True)
 
     #####################
     # make the gif out of the plots
