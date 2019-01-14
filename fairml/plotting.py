@@ -305,35 +305,89 @@ def plot_var_sets(benchmarks, nets, pname, batch=False):
     plt.close(fig)
 
 
-def plot_spurious_signal(mass, preds_GBC_ss, preds_DNN_ss, percentile, path, batch=False):
+def plot_spurious_signal(Z_ss, test_package, preds_GBC_ss, preds_DNN_ss, percentile, path, batch=False):
+    
+    ####################
+    # compute spurious signal
+    ####################
 
     # get var list
-    var_sets = list(mass.keys())
+    var_sets = list(Z_ss.keys())
 
     # get the mass distros
-    cut_GBC_ss, cut_DNN_ss, GBC_Zs, DNN_Zs = {}, {}, {}, {}
+    cut_GBC, cut_DNN, GBC_Zs, DNN_Zs = {}, {}, {}, {}
     for v in var_sets:
 
         # reshape
         preds_DNN_ss[v] = preds_DNN_ss[v].reshape(-1) # column to row
 
         # get the percentile values
-        cut_GBC_ss[v] = np.percentile(preds_GBC_ss[v], 100-percentile)
-        cut_DNN_ss[v] = np.percentile(preds_DNN_ss[v], 100-percentile)
+        cut_GBC[v] = np.percentile(preds_GBC_ss[v], 100-percentile)
+        cut_DNN[v] = np.percentile(preds_DNN_ss[v], 100-percentile)
 
         # get the mass distros
-        GBC_Zs[v] = mass[v][preds_GBC_ss[v] > cut_GBC_ss[v]]
-        DNN_Zs[v] = mass[v][preds_DNN_ss[v] > cut_DNN_ss[v]]
+        GBC_Zs[v] = Z_ss[v][preds_GBC_ss[v] > cut_GBC[v]]
+        DNN_Zs[v] = Z_ss[v][preds_DNN_ss[v] > cut_DNN[v]]
+
+    # unpack the data and mc
+    X, Y, Z, W, preds_GBC, preds_DNN = test_package 
+    nsel_GBC_sig, nsel_DNN_sig = {}, {}
+    nsel_GBC_data, nsel_DNN_data = {}, {} # total number of data events, extrapolated from the sidebands
+
+    for v in var_sets:
+ 
+        # reshape DNN
+        preds_DNN[v] = preds_DNN[v].reshape(-1)
+
+        # get the number of selected signal events
+        preds_GBC_sig = preds_GBC[v][Y[v] == 1]
+        preds_DNN_sig = preds_DNN[v][Y[v] == 1]
+
+        weights_signal = W[v][Y[v] == 1]
+
+        mask_GBC_signal = preds_GBC_sig > cut_GBC[v]
+        mask_DNN_signal = preds_DNN_sig > cut_DNN[v]
+
+        nsel_GBC_sig[v] = np.sum(weights_signal[mask_GBC_signal])
+        nsel_DNN_sig[v] = np.sum(weights_signal[mask_DNN_signal])
+
+        # get the number of selected data events (sideband only)
+        preds_GBC_data = preds_GBC[v][Y[v] == 0]
+        preds_DNN_data = preds_DNN[v][Y[v] == 0]
+
+        weights_data = W[v][Y[v] == 0] # all 1
+
+        mask_GBC_data = preds_GBC_data > cut_GBC[v]
+        mask_DNN_data = preds_DNN_data > cut_DNN[v]
+
+        nsel_GBC_data[v] = np.sum(weights_data[mask_GBC_data])
+        nsel_DNN_data[v] = np.sum(weights_data[mask_DNN_data])
+
+        # and extrapolate to the signal region using ss MC
+        nsel_GBC_ss = len(GBC_Zs[v])
+        nsel_DNN_ss = len(DNN_Zs[v])
+
+        nsideband_GBC_ss = np.sum( (GBC_Zs[v] < 120) | (GBC_Zs[v] > 130) )
+        nsideband_DNN_ss = np.sum( (DNN_Zs[v] < 120) | (DNN_Zs[v] > 130) )
+
+        tf_GBC = nsel_GBC_ss / float(nsideband_GBC_ss)
+        tf_DNN = nsel_DNN_ss / float(nsideband_DNN_ss)
+
+        nsel_GBC_data[v] *= tf_GBC
+        nsel_DNN_data[v] *= tf_DNN
+
+    ####################
+    # make the plot
+    ####################
 
     # plot
-    bins=100
-
     fig, ax = plt.subplots(2, 1, figsize=(7,7), sharex=True, gridspec_kw={'height_ratios':[3,1]})
     fig.suptitle(os.path.basename(path).split('.')[0], fontsize=10)
 
     # top panel
     lstyles = {'low':':', 'high':'--', 'both':'-'}
     xlow, xhigh = 110, 160
+    bins = 100
     GBC_hist, DNN_hist = {}, {}
     for v in var_sets:
         common_kwargs = {'bins':bins, 'range':(xlow,xhigh), 'histtype':'step', 'linestyle':lstyles[v]}
@@ -345,7 +399,7 @@ def plot_spurious_signal(mass, preds_GBC_ss, preds_DNN_ss, percentile, path, bat
     ax[0].set_ylabel('Selected events')
 
     # bottom panel
-    Z_hist, edges = np.histogram(mass[var_sets[0]], bins=bins, range=(xlow,xhigh))
+    Z_hist, edges = np.histogram(Z_ss[var_sets[0]], bins=bins, range=(xlow,xhigh))
     lows = edges[:-1]
     highs = edges[1:]
     centres = (lows+highs)*0.5

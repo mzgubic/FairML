@@ -40,7 +40,7 @@ def train(args):
     name = 'model'
 
     var_sets = ['low', 'high', 'both']
-    #var_sets = ['both']
+    var_sets = ['both']
 
     #####################
     # Generate test data (performance and spurious signal)
@@ -208,8 +208,8 @@ def train(args):
             percentiles = [50]
             for p in percentiles:
                 path = get_path('SpuriousSignal{}'.format(p), e)
-                #plotting.plot_spurious_signal(Z_ss_plot[v], preds400_ss[v], npreds_ss[v], p, path, batch=True)
-                plotting.plot_spurious_signal(Z_ss_plot, preds400_ss, npreds_ss, p, path, batch=True)
+                test_package = X, Y, Z, W, preds400, npreds
+                plotting.plot_spurious_signal(Z_ss_plot, test_package, preds400_ss, npreds_ss, p, path, batch=True)
 
     #####################
     # make the gif out of the plots
