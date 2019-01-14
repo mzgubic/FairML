@@ -327,15 +327,35 @@ def plot_spurious_signal(Z, preds400, predsDNN, percentile, path, batch=False):
     # plot
     bins=100
 
-    fig, ax = plt.subplots(figsize=(7,7))
+    fig, ax = plt.subplots(2, 1, figsize=(7,7), sharex=True, gridspec_kw={'height_ratios':[3,1]})
     fig.suptitle(os.path.basename(path).split('.')[0])
+
+    # top panel
     lstyles = {'low':':', 'high':'--', 'both':'-'}
+    xlow, xhigh = 110, 160
+    gbc_hist, dnn_hist = {}, {}
     for v in var_sets:
-        ax.hist(gbc_Zs[v], bins=bins, range=(110,160), histtype='step', linestyle=lstyles[v], color='k', label='GBC ({}) best {}%'.format(v, percentile))
-        ax.hist(dnn_Zs[v], bins=bins, range=(110,160), histtype='step', linestyle=lstyles[v], color=utils.blue, label='DNN ({}) best {}%'.format(v, percentile))
-    ax.legend(loc='best')
-    ax.set_xlabel('Invariant Mass [GeV]')
-    ax.set_ylabel('Events')
+        # todo: try passing common kwargs
+        gbc_hist[v], _, _ = ax[0].hist(gbc_Zs[v], bins=bins, range=(xlow,xhigh), histtype='step', linestyle=lstyles[v], color='k', label='GBC ({}) best {}%'.format(v, percentile))
+        dnn_hist[v], _, _ = ax[0].hist(dnn_Zs[v], bins=bins, range=(xlow,xhigh), histtype='step', linestyle=lstyles[v], color=utils.blue, label='DNN ({}) best {}%'.format(v, percentile))
+    ax[0].set_title('Background-only MC')
+    ax[0].legend(loc='best')
+    ax[0].set_xlim(xlow, xhigh)
+    ax[0].set_ylabel('Selected events')
+
+    # bottom panel
+    Z_hist, edges = np.histogram(Z[var_sets[0]], bins=bins, range=(xlow,xhigh))
+    lows = edges[:-1]
+    highs = edges[1:]
+    centres = (lows+highs)*0.5
+
+    ax[1].plot([xlow, xhigh], [percentile/100., percentile/100.], 'k:')
+    for v in var_sets:
+        ax[1].hist(centres, weights=gbc_hist[v]/Z_hist, bins=bins, range=(xlow,xhigh), histtype='step', linestyle=lstyles[v], color='k')
+        ax[1].hist(centres, weights=dnn_hist[v]/Z_hist, bins=bins, range=(xlow,xhigh), histtype='step', linestyle=lstyles[v], color=utils.blue)
+    ax[1].set_xlim(xlow, xhigh)
+    ax[1].set_ylabel('Selected/All ratio')
+    ax[1].set_xlabel('Invariant Mass [GeV]')
 
     # save
     plt.savefig(path)

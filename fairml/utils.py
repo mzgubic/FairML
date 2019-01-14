@@ -31,7 +31,15 @@ def dict_to_unix(conf):
 
     unix = ''
     for key in sorted(conf):
+
+        # do not care about whether it was produced on batch or not
+        if key == 'batch':
+            continue
+
+        # add the setting name
         unix += '_' + rmc(key)
+
+        # and the value of the settings, depending on whether it is a single one or more
         if type(conf[key]) in [list, dict]:
             for v in sorted(conf[key]):
                 unix += rmc(v)
