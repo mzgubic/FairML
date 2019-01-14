@@ -305,24 +305,25 @@ def plot_var_sets(benchmarks, nets, pname, batch=False):
     plt.close(fig)
 
 
-def plot_spurious_signal(Z, preds400, predsDNN, percentile, path, batch=False):
+def plot_spurious_signal(mass, preds_GBC_ss, preds_DNN_ss, percentile, path, batch=False):
 
     # get var list
-    var_sets = list(Z.keys())
+    var_sets = list(mass.keys())
 
     # get the mass distros
-    preds400_cut, predsDNN_cut, gbc_Zs, dnn_Zs = {}, {}, {}, {}
+    cut_GBC_ss, cut_DNN_ss, GBC_Zs, DNN_Zs = {}, {}, {}, {}
     for v in var_sets:
+
         # reshape
-        predsDNN[v] = predsDNN[v].reshape(-1) # column to row
+        preds_DNN_ss[v] = preds_DNN_ss[v].reshape(-1) # column to row
 
         # get the percentile values
-        preds400_cut[v] = np.percentile(preds400[v], 100-percentile)
-        predsDNN_cut[v] = np.percentile(predsDNN[v], 100-percentile)
+        cut_GBC_ss[v] = np.percentile(preds_GBC_ss[v], 100-percentile)
+        cut_DNN_ss[v] = np.percentile(preds_DNN_ss[v], 100-percentile)
 
         # get the mass distros
-        gbc_Zs[v] = Z[v][preds400[v] > preds400_cut[v]]
-        dnn_Zs[v] = Z[v][predsDNN[v] > predsDNN_cut[v]]
+        GBC_Zs[v] = mass[v][preds_GBC_ss[v] > cut_GBC_ss[v]]
+        DNN_Zs[v] = mass[v][preds_DNN_ss[v] > cut_DNN_ss[v]]
 
     # plot
     bins=100
@@ -333,18 +334,18 @@ def plot_spurious_signal(Z, preds400, predsDNN, percentile, path, batch=False):
     # top panel
     lstyles = {'low':':', 'high':'--', 'both':'-'}
     xlow, xhigh = 110, 160
-    gbc_hist, dnn_hist = {}, {}
+    GBC_hist, DNN_hist = {}, {}
     for v in var_sets:
         common_kwargs = {'bins':bins, 'range':(xlow,xhigh), 'histtype':'step', 'linestyle':lstyles[v]}
-        gbc_hist[v], _, _ = ax[0].hist(gbc_Zs[v], color='k', label='GBC ({}) best {}%'.format(v, percentile), **common_kwargs)
-        dnn_hist[v], _, _ = ax[0].hist(dnn_Zs[v], color=utils.blue, label='DNN ({}) best {}%'.format(v, percentile), **common_kwargs)
+        GBC_hist[v], _, _ = ax[0].hist(GBC_Zs[v], color='k', label='GBC ({}) best {}%'.format(v, percentile), **common_kwargs)
+        DNN_hist[v], _, _ = ax[0].hist(DNN_Zs[v], color=utils.blue, label='DNN ({}) best {}%'.format(v, percentile), **common_kwargs)
     ax[0].set_title('Background-only MC')
     ax[0].legend(loc='best')
     ax[0].set_xlim(xlow, xhigh)
     ax[0].set_ylabel('Selected events')
 
     # bottom panel
-    Z_hist, edges = np.histogram(Z[var_sets[0]], bins=bins, range=(xlow,xhigh))
+    Z_hist, edges = np.histogram(mass[var_sets[0]], bins=bins, range=(xlow,xhigh))
     lows = edges[:-1]
     highs = edges[1:]
     centres = (lows+highs)*0.5
@@ -352,8 +353,8 @@ def plot_spurious_signal(Z, preds400, predsDNN, percentile, path, batch=False):
     ax[1].plot([xlow, xhigh], [percentile/100., percentile/100.], 'k:')
     for v in var_sets:
         common_kwargs = {'bins':bins, 'range':(xlow,xhigh), 'histtype':'step', 'linestyle':lstyles[v]}
-        ax[1].hist(centres, weights=gbc_hist[v]/Z_hist, color='k', **common_kwargs)
-        ax[1].hist(centres, weights=dnn_hist[v]/Z_hist, color=utils.blue, **common_kwargs)
+        ax[1].hist(centres, weights=GBC_hist[v]/Z_hist, color='k', **common_kwargs)
+        ax[1].hist(centres, weights=DNN_hist[v]/Z_hist, color=utils.blue, **common_kwargs)
     ax[1].set_xlim(xlow, xhigh)
     ax[1].set_ylabel('Selected/All ratio')
     ax[1].set_xlabel('Invariant Mass [GeV]')
@@ -364,8 +365,6 @@ def plot_spurious_signal(Z, preds400, predsDNN, percentile, path, batch=False):
     if not batch:
         plt.show()
     plt.close(fig)
-
-
 
 
 
