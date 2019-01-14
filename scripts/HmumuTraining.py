@@ -193,7 +193,7 @@ def train(args):
                 dirn = 'media/plots/{p}/{d}'.format(p=pname, d=description)
                 if not os.path.exists(dirn):
                     os.makedirs(dirn)
-                path = '{d}/{n}_{c:03}.pdf'.format(d=dirn, n=description, c=e)
+                path = '{d}/{p}_{n}_{c:03}.pdf'.format(d=dirn, p=pname, n=description, c=e)
                 return path
         
             # make the classifier performance plot
