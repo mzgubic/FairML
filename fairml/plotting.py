@@ -190,14 +190,48 @@ def plot_MI(MINEs, MIs, n_adv_cycles, pname, batch=False):
 
 
 def plot_toy_variates(X, Y, Z):
+    
+    # prepare
     n_samples = X.shape[0]
-    fig, ax = plt.subplots(figsize=(5,5))
-    ax.scatter(X[Y==0,0], X[Y==0,1], marker='o', color='k', alpha=0.2, label='Y=0')
-    ax.scatter(X[Y==1,0], X[Y==1,1], marker='x', c=Z[n_samples//2:], alpha=0.4, cmap='Reds', label='Y=1')
-    ax.set_ylim(-5, 5)
-    ax.set_xlim(-5, 5)
-    ax.set_xlabel('x1')
-    ax.set_ylabel('x2')
-    leg = ax.legend(loc='best')
+    X0, Z0 = X[Y==0], Z[Y==0]
+    X1, Z1 = X[Y==1], Z[Y==1]
+    plot_min, plot_max = -5, 5
+    bandwidth = 0.2
+    
+    # gaussian KDE
+    x1_plot = np.linspace(plot_min, plot_max, 100)
+    x1_kde = KernelDensity(kernel='gaussian', bandwidth=bandwidth)
+    px1_log = {}
+    px1_log['y==0'] = x1_kde.fit(X0[:,0].reshape(-1,1)).score_samples(x1_plot.reshape(-1,1))
+    px1_log['y==1'] = x1_kde.fit(X1[:,0].reshape(-1,1)).score_samples(x1_plot.reshape(-1,1))
+    
+    # gaussian KDE
+    x2_kde = KernelDensity(kernel='gaussian', bandwidth=bandwidth)
+    px2_log = {}
+    px2_log['y==0'] = x2_kde.fit(X0[:,1].reshape(-1,1)).score_samples(x1_plot.reshape(-1,1))
+    px2_log['y==1'] = x2_kde.fit(X1[:,1].reshape(-1,1)).score_samples(x1_plot.reshape(-1,1))
+    
+    # main
+    fig, ax = plt.subplots(2, 2, figsize=(7,7), gridspec_kw={'height_ratios':[1,4], 'width_ratios':[4,1]}, sharex='col', sharey='row')
+    ax[1,0].scatter(X[Y==0,0], X[Y==0,1], marker='o', color='k', alpha=0.2, label='Y=0')
+    ax[1,0].scatter(X[Y==1,0], X[Y==1,1], marker='x', c=Z[n_samples//2:], alpha=0.4, cmap='Reds', label='Y=1')
+    
+    # top
+    ax[0,0].plot(x1_plot, np.exp(px1_log['y==0']), color='k')
+    ax[0,0].plot(x1_plot, np.exp(px1_log['y==1']), color='r')
+    
+    # right
+    ax[1,1].plot(np.exp(px2_log['y==0']), x1_plot, color='k')
+    ax[1,1].plot(np.exp(px2_log['y==1']), x1_plot, color='r')
+    
+    # cosmetics
+    ax[1,0].set_ylim(plot_min, plot_max)
+    ax[1,0].set_xlim(plot_min, plot_max)
+    ax[1,0].set_xlabel('x1')
+    ax[1,0].set_ylabel('x2')
+    leg = ax[1,0].legend(loc='best')
     leg.legendHandles[1].set_color('red')
+    
+    # empty axes
+    fig.delaxes(ax[0,1])
     fig.show()
