@@ -190,6 +190,9 @@ def plot_MI(MINEs, MIs, n_adv_cycles, pname, batch=False):
 
 
 def plot_toy_variates(X, Y, Z):
+
+    Y = Y.ravel()
+    Z = Z.ravel()
     
     # prepare
     n_samples = X.shape[0]

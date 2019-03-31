@@ -3,6 +3,54 @@ import tensorflow as tf
 import tensorflow.contrib.layers as layers
 
 
+class Model:
+    
+    def __init__(self, depth, width, name):
+
+        self.depth = depth
+        self.width = width
+        self.name = name
+        
+
+class Classifier(Model):
+
+    def __init__(self, depth, width, name, n_classes=2):
+
+        super().__init__(depth, width, name)
+        self.n_classes = 2
+
+    def build_forward(self, x_in):
+
+        with tf.variable_scope(self.name):
+
+            # input layer
+            layer = x_in
+
+            # hidden layers
+            for _ in range(self.depth):
+                layer = layers.relu(layer, self.width)
+
+            # logits and output
+            self.logits = layers.linear(layer, self.n_classes)
+            self.output = tf.reshape(layers.softmax(self.logits)[:, 1], shape=(-1, 1))
+
+        self.vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.name)
+
+    def build_loss(self, labels):
+        
+        # one hot encode the labels
+        #one_hot = tf.one_hot(tf.reshape(labels, shape=[-1]), depth=self.n_classes)
+
+        # and build the loss
+        #self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=one_hot, logits=self.logits))
+        self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=self.logits))
+
+#
+#class Adversary(Model):
+#
+#    def __init__(self, 
+
+
 def MINE(x_in, y_in, name, H=10, deep=False):
 
     # reshape the tensor to correct shape [if (100, ) reshape to (100, 1)]

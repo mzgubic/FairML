@@ -1,6 +1,6 @@
 import numpy as np
 
-def generate_toys(n_samples, z=None):
+def toys_simple(n_samples, z=None):
 
     # Y
     Y = np.zeros(n_samples)
@@ -18,7 +18,7 @@ def generate_toys(n_samples, z=None):
     X1[:,1] += Z[n_samples//2:]
     X = np.concatenate([X0, X1])
 
-    return X, Y, Z
+    return {'X':X, 'Y':Y.reshape(-1, 1), 'Z':Z.reshape(-1, 1)}
 
 def toys_single_Z_diff(n_samples, z=None):
 
@@ -54,6 +54,6 @@ def toys_single_Z_diff(n_samples, z=None):
     X1[:, 1] += Z1
     X = np.concatenate([X0, X1])
 
-    return X, Y, Z
+    return {'X':X, 'Y':Y.reshape(-1, 1), 'Z':Z.reshape(-1, 1)}
 
 
