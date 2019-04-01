@@ -14,6 +14,7 @@ def XYZ(batch):
     
     return X, Y, Z
 
+
 def variates_main(ax, batch):
     
     # prepare
@@ -32,6 +33,7 @@ def variates_main(ax, batch):
     leg = ax.legend(loc='best')
     leg.legendHandles[1].set_color('red')
     
+
 def variates_kde(ax, batch, x_cpt):
     
     # prepare
@@ -53,6 +55,7 @@ def variates_kde(ax, batch, x_cpt):
         ax.plot(np.exp(log_0), x_plot, color='k')
         ax.plot(np.exp(log_1), x_plot, color='r')
         
+
 def roc_curves(ax, batch1, batch0, batch_1, preds1, preds0, preds_1):
     
     # prepare
@@ -72,6 +75,7 @@ def roc_curves(ax, batch1, batch0, batch_1, preds1, preds0, preds_1):
     ax.set_ylabel('True positive rate')
     ax.set_title('ROC curve')
     
+
 def clf_outputs(ax, preds1, preds0, preds_1):
     
     bins=30
@@ -83,6 +87,7 @@ def clf_outputs(ax, preds1, preds0, preds_1):
     ax.legend(loc='best')
     ax.set_title('Classifier output')
     
+
 def decision_boundary(ax, batch, preds):
     
     # prepare
@@ -96,6 +101,15 @@ def decision_boundary(ax, batch, preds):
     ax.set_xlabel('x1')
     ax.set_ylabel('x2')
     plt.colorbar(dec, ax=ax)
-    
 
 
+def history(ax, metric, style, color, label, cut_first=0):
+
+    # cut away first N to get 'zoom in' effect on the y-scale
+    n_tot = len(metric)
+    n_cut = cut_first if n_tot > 30 else 0
+
+    # plot
+    metric = metric[n_cut:]
+    ax.plot(range(n_cut, n_tot), metric, linestyle=style, c=color, label=label)
+    ax.set_xlim(0, n_tot)

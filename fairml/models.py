@@ -4,19 +4,19 @@ import tensorflow.contrib.layers as layers
 
 
 class Model:
-    
-    def __init__(self, depth, width, name):
+
+    def __init__(self, name, depth, width):
 
         self.depth = depth
         self.width = width
         self.name = name
-        
+
 
 class Classifier(Model):
 
-    def __init__(self, depth, width, name, n_classes=2):
+    def __init__(self, name, depth=3, width=10, n_classes=2):
 
-        super().__init__(depth, width, name)
+        super().__init__(name, depth, width)
         self.n_classes = 2
 
     def build_forward(self, x_in):
@@ -37,121 +37,175 @@ class Classifier(Model):
         self.vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.name)
 
     def build_loss(self, labels):
-        
+
         # one hot encode the labels
-        #one_hot = tf.one_hot(tf.reshape(labels, shape=[-1]), depth=self.n_classes)
+        one_hot = tf.one_hot(tf.reshape(labels, shape=[-1]), depth=self.n_classes)
 
         # and build the loss
-        #self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=one_hot, logits=self.logits))
-        self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=self.logits))
-
-#
-#class Adversary(Model):
-#
-#    def __init__(self, 
-
-
-def MINE(x_in, y_in, name, H=10, deep=False):
-
-    # reshape the tensor to correct shape [if (100, ) reshape to (100, 1)]
-    n_samples = tf.shape(y_in)[0]
-    y_in = tf.reshape(y_in, shape=(n_samples, 1))
-    
-    # use scoped names 
-    with tf.variable_scope(name):
-
-        # shuffle the y in (independent prabability density)
-        y_shuffle = tf.random_shuffle(y_in)
-        x_conc = tf.concat([x_in, x_in], axis=0)
-        y_conc = tf.concat([y_in, y_shuffle], axis=0)
-
-        # compute the forward pass
-        layerx = layers.linear(x_conc, H)
-        layery = layers.linear(y_conc, H)
-        layer2 = tf.nn.relu(layerx + layery)
-        if deep:
-            layer2 = layers.relu(layer2, H)
-            layer2 = layers.relu(layer2, H)
-        output = layers.linear(layer2, 1)
-
-        # split in the T_xy and T_x_y predictions
-        N_batch = tf.shape(x_in)[0]
-        T_xy = output[:N_batch]
-        T_x_y = output[N_batch:]
-
-    # get the variables
-    tf_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=name)
-
-    return T_xy, T_x_y, tf_vars
-
-
-def MINE_loss(T_xy, T_x_y):
-    
-    # compute the loss
-    loss = - (tf.reduce_mean(T_xy, axis=0) - tf.math.log(tf.reduce_mean(tf.math.exp(T_x_y), axis=0)))
-    return loss
-
-
-def classifier(x_in, name):
-    
-    with tf.variable_scope(name):
+        self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=one_hot, logits=self.logits))
         
-        # define the output of the network
-        dense1 = layers.relu(x_in, 20)
-        dense2 = layers.relu(dense1, 20)
-        output = layers.linear(dense2, 1)
 
-    these_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=name)
+class Adversary(Model):
     
-    return output, these_vars
-
-
-def classifier_loss(clf_output, y_in):
-    
-    # define the loss 
-    n_samples = tf.shape(y_in)[0]
-    y_shaped = tf.reshape(y_in, shape=(n_samples, 1))
-    loss_D = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=y_shaped, logits=clf_output))
-    
-    return loss_D
-
-
-def adversary_gaussmix(clf_output, n_components, name):
-    
-    with tf.variable_scope(name):
+    def __init__(self, name, depth=1, width=5):
         
-        # define the output of a network (depends on number of components)
-        dense1 = layers.relu(clf_output, 20)
-        dense2 = layers.relu(dense1, 20)
-        output_noact = layers.linear(dense2, 3*n_components)
-        
-        # make sure sigmas are positive and pis are normalised 
-        mu = output_noact[:, :n_components]
-        sigma = tf.exp(output_noact[:, n_components:2*n_components])
-        pi = tf.nn.softmax(output_noact[:, 2*n_components:])
-        
-        # and merge them together again
-        output = tf.concat([mu, sigma, pi], axis=1)
+        super().__init__(name, depth, width)
+        self.loss = None
+        self.vars = None
     
-    these_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=name)
-    
-    return output, these_vars
+    @classmethod
+    def create(cls, name, adv_settings):
+        
+        adv_type = adv_settings['adv_type']
+        
+        classes = {'Dummy':DummyAdversary,
+                   'GMM':GMMAdversary,
+                   'MINE':MINEAdversary}
+        
+        # check if implemented
+        if adv_type not in classes:
+            raise ValueError('Unknown Adversary type {}.'.format(adv_type))
+        
+        # return the right one
+        adversary = classes[adv_type]
+        adv_settings.pop('adv_type')
+        return adversary(name='{}_{}_adv'.format(name, adv_type), **adv_settings)
 
 
-def adversary_gaussmix_loss(z_in, adv_output, n_components):
+class DummyAdversary(Adversary):
     
-    # build the pdf (max likelihood principle)
-    mu = adv_output[:, :n_components]
-    sigma = adv_output[:, n_components:2*n_components]
-    pi = adv_output[:, 2*n_components:]
+    def __init__(self, name, **kwargs):
+        
+        super().__init__(name, **kwargs)
+        
+    def build_loss(self, fX, Z):
+        
+        with tf.variable_scope(self.name):
+            dummy_var = tf.Variable(0.1, name='dummy')
+            self.loss = dummy_var**2 # i.e. goes to zero
+            self.loss += 0 * tf.reduce_mean(fX) # and connects to the classifier weights
+
+        self.vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.name)
+
+
+class GMMAdversary(Adversary):
     
-    pdf = 0
-    for c in range(n_components):
-        pdf += pi[:, c] * ((1. / np.sqrt(2. * np.pi)) / sigma[:, c] *
-                tf.math.exp(-(z_in - mu[:, c]) ** 2 / (2. * sigma[:, c] ** 2)))
+    def __init__(self, name, n_components=5, **kwargs):
+        
+        super().__init__(name, **kwargs)
+        
+        self.nll_pars = None
+        self.n_components = n_components
+        for kw in kwargs:
+            setattr(self, kw, kwargs[kw])
+    
+    def build_loss(self, fX, Z):
+        
+        # nll network
+        self._make_nll(fX)
+        
+        # loss
+        self._make_loss(Z)
+    
+    def _make_nll(self, fX):
+        
+        n_components = self.n_components
+        
+        with tf.variable_scope(self.name):
+
+            # define the input layer
+            layer = fX
+
+            # define the output of a network (depends on number of components)
+            for _ in range(self.depth):
+                layer = layers.relu(layer, self.width)
+
+            # output layer: (mu, sigma, amplitude) for each component
+            output = layers.linear(layer, 3*n_components)
+
+            # make sure sigmas are positive and pis are normalised
+            mu = output[:, :n_components]
+            sigma = tf.exp(output[:, n_components:2*n_components])
+            pi = tf.nn.softmax(output[:, 2*n_components:])
+
+            # interpret the output layers as nll parameters
+            self.nll_pars = tf.concat([mu, sigma, pi], axis=1)
+
+        self.vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.name)
+    
+    def _make_loss(self, Z):
+        
+        # for convenience
+        n_components = self.n_components
+
+        # build the pdf (max likelihood principle)
+        mu = self.nll_pars[:, :n_components]
+        sigma = self.nll_pars[:, n_components:2*n_components]
+        pi = self.nll_pars[:, 2*n_components:]
+
+        likelihood = 0
+        for c in range(n_components):
+
+            # normalisation
+            norm_vec = tf.reshape(pi[:, c] * (1. / np.sqrt(2. * np.pi)) / sigma[:, c], shape=(-1, 1))
+
+            # exponential
+            mu_vec = tf.reshape(mu[:, c], shape=(-1, 1))
+            sigma_vec = tf.reshape(sigma[:, c], shape=(-1, 1))
+            exp = tf.math.exp(-(Z - mu_vec) ** 2 / (2. * sigma_vec ** 2))
+
+            # add to likelihood
+            likelihood += norm_vec * exp
+
+        # make the loss
+        nll = - tf.math.log(likelihood)
+        self.loss = tf.reduce_mean(nll)
+        
+
+class MINEAdversary(Adversary):
+    
+    def __init__(self, name, **kwargs):
+        
+        super().__init__(name, **kwargs)
+        
+        for kw in kwargs:
+            setattr(self, kw, kwargs[kw])
             
-    # make the loss
-    nll = - tf.math.log(pdf)
-    loss_R = tf.reduce_mean(nll)
-    
-    return loss_R
+    def build_loss(self, fX, Z):
+        
+        # store the input placeholders
+        fX = tf.reshape(fX, shape=(-1, 1))
+        Z = tf.reshape(Z, shape=(-1, 1))
+
+        # aliases
+        x_in = fX
+        y_in = Z
+
+        # use scope to keep track of vars
+        with tf.variable_scope(self.name):
+            
+            # shuffle one of them
+            y_shuffle = tf.random_shuffle(y_in)
+            x_conc = tf.concat([x_in, x_in], axis=0)
+            y_conc = tf.concat([y_in, y_shuffle], axis=0)
+
+            # compute the forward pass
+            layer_x = layers.linear(x_conc, self.width)
+            layer_y = layers.linear(y_conc, self.width)
+            layer = tf.nn.relu(layer_x + layer_y)
+
+            for _ in range(self.depth):
+                layer = layers.relu(layer, self.width)
+
+            output = layers.linear(layer, 1)
+
+            # split in T_xy and T_x_y
+            N_batch = tf.shape(x_in)[0]
+            T_xy = output[:N_batch]
+            T_x_y = output[N_batch:]
+
+            # compute the loss
+            self.loss = - (tf.reduce_mean(T_xy, axis=0) - tf.math.log(tf.reduce_mean(tf.math.exp(T_x_y), axis=0)))
+
+        # save variables
+        self.vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.name)
