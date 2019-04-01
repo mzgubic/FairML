@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import scipy
+import numpy as np
 from sklearn.metrics import roc_auc_score
 import tensorflow as tf
 
@@ -217,6 +218,14 @@ class TFEnvironment:
         auroc_1 = roc_auc_score(batch[-1]['Y'].ravel(), preds[-1].ravel())
         
         return auroc1, auroc0, auroc_1
+
+    def _pdf_pars(self, batch_size):
+
+        # get predictions
+        batch = self.generate(batch_size)
+        feed_dict = self._get_feed_dict(batch)
+
+        return self.sess.run(self.adv.nll_pars, feed_dict=feed_dict)
         
     def predict(self, batch):
         
@@ -224,7 +233,7 @@ class TFEnvironment:
         preds = self.sess.run(self.clf.output, feed_dict=feed_dict)
         
         return preds
-    
+
     def show_variates(self, batch_size):
         
         print('--- Plot random variates')
@@ -289,14 +298,14 @@ class TFEnvironment:
         fig, ax = plt.subplots(5, figsize=(7,10), sharex=True)
         fig.suptitle('Losses for {} (lambda={})'.format(self.adv.__class__.__name__, self.lam))
         
-        # classifier loss
-        plot.history(ax[0], self.history['L_clf'], '-', 'k', 'Classifier Loss', remove_first)
+        # combined loss
+        plot.history(ax[0], self.history['L_comb'], '-', 'k', 'Combined loss', remove_first)
         
         # adversary loss
         plot.history(ax[1], self.history['L_adv'], '-', 'crimson', 'Adversary loss', remove_first)
         
-        # combined loss
-        plot.history(ax[2], self.history['L_comb'], '-', 'royalblue', 'Combined loss', remove_first)
+        # classifier loss
+        plot.history(ax[2], self.history['L_clf'], '-', 'royalblue', 'Classifier Loss', remove_first)
         
         # KS metric
         plot.history(ax[3], self.history['KS1'], '-', 'darkred', 'KS (z=1, z=0)')

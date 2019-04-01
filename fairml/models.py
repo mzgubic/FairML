@@ -14,7 +14,7 @@ class Model:
 
 class Classifier(Model):
 
-    def __init__(self, name, depth=3, width=10, n_classes=2):
+    def __init__(self, name, depth=2, width=20, n_classes=2):
 
         super().__init__(name, depth, width)
         self.n_classes = 2
@@ -49,7 +49,7 @@ class Classifier(Model):
 
 class Adversary(Model):
     
-    def __init__(self, name, depth=1, width=5):
+    def __init__(self, name, depth=2, width=20):
         
         super().__init__(name, depth, width)
         self.loss = None
@@ -92,9 +92,9 @@ class DummyAdversary(Adversary):
 
 class GMMAdversary(Adversary):
     
-    def __init__(self, name, n_components=5, **kwargs):
+    def __init__(self, name, depth=2, width=20, n_components=5, **kwargs):
         
-        super().__init__(name, **kwargs)
+        super().__init__(name, depth, width, **kwargs)
         
         self.nll_pars = None
         self.n_components = n_components
@@ -170,9 +170,9 @@ class GMMAdversary(Adversary):
 
 class MINEAdversary(Adversary):
     
-    def __init__(self, name, **kwargs):
+    def __init__(self, name, depth=1, width=10, **kwargs):
         
-        super().__init__(name, **kwargs)
+        super().__init__(name, depth, width, **kwargs)
         
         for kw in kwargs:
             setattr(self, kw, kwargs[kw])
