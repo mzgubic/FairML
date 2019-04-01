@@ -72,48 +72,48 @@ class TFEnvironment:
         self.lam = lam
         
         # compute the optimisation steps
-        self.opt_clf = self.optimizer.minimize(self.clf.loss, var_list=self.clf.vars)
-        self.opt_adv = self.optimizer.minimize(self.adv.loss, var_list=self.adv.vars)
+        self.opt_clf = self.optimizer.minimize(self.clf.loss, var_list=self.clf.tf_vars)
+        self.opt_adv = self.optimizer.minimize(self.adv.loss, var_list=self.adv.tf_vars)
         comb_loss = self.clf.loss - lam * self.adv.loss
-        self.opt_comb = self.optimizer.minimize(comb_loss, var_list=self.clf.vars)
+        self.opt_comb = self.optimizer.minimize(comb_loss, var_list=self.clf.tf_vars)
     
-    def build_opt_2(self, lam=1.0, opt_type='AdamOptimizer', learning_rate=0.05, projection=False):
-        
-        print('--- Building computational graphs for optimisations')
-        
-        # optimizer type
-        opt = getattr(tf.train, opt_type)
-        self.optimizer = opt(learning_rate=learning_rate)
-        self.lam = lam
-        
-        # compute the gradients (d(Loss_clf)/d(weights_clf))
-        grad_Lc_clf = self.optimizer.compute_gradients(self.clf.loss, var_list=self.clf.vars)
-        grad_La_clf = self.optimizer.compute_gradients(self.adv.loss, var_list=self.clf.vars)
-        grad_La_adv = self.optimizer.compute_gradients(self.adv.loss, var_list=self.adv.vars)
-        
-        grad_comb = [] # the adversarial part
-        for i in range(len(grad_Lc_clf)):
-            
-            # combine the gradients
-            g = grad_Lc_clf[i][0]         # direction to improve classifier
-            h = - lam * grad_La_clf[i][0] # direction to make classifier fairer w.r.t to adversary
-            c = g + h                     # combined direction
-            
-            # add the projection term if necessary
-            #if projection:
-            #    normalize = lambda x: x / (tf.norm(x) + np.finfo(np.float32).tiny)
-            #    h_norm = normalize(h)
-            #    proj = tf.reduce_sum(h_norm * g) * h_norm
-            #    comb -= proj
-            
-            # and finally build the combined gradients list
-            var = grad_Lc_clf[i][1]
-            grad_comb.append((c, var))
-        
-        # compute the optimisation steps
-        #self.opt_clf = self.optimizer.apply_gradients(grad_Lc_clf)
-        #self.opt_adv = self.optimizer.apply_gradients(grad_La_adv)
-        #self.opt_comb = self.optimizer.apply_gradients(grad_comb)
+    #def build_opt_2(self, lam=1.0, opt_type='AdamOptimizer', learning_rate=0.05, projection=False):
+    #    
+    #    print('--- Building computational graphs for optimisations')
+    #    
+    #    # optimizer type
+    #    opt = getattr(tf.train, opt_type)
+    #    self.optimizer = opt(learning_rate=learning_rate)
+    #    self.lam = lam
+    #    
+    #    # compute the gradients (d(Loss_clf)/d(weights_clf))
+    #    grad_Lc_clf = self.optimizer.compute_gradients(self.clf.loss, var_list=self.clf.tf_vars)
+    #    grad_La_clf = self.optimizer.compute_gradients(self.adv.loss, var_list=self.clf.tf_vars)
+    #    grad_La_adv = self.optimizer.compute_gradients(self.adv.loss, var_list=self.adv.tf_vars)
+    #    
+    #    grad_comb = [] # the adversarial part
+    #    for i in range(len(grad_Lc_clf)):
+    #        
+    #        # combine the gradients
+    #        g = grad_Lc_clf[i][0]         # direction to improve classifier
+    #        h = - lam * grad_La_clf[i][0] # direction to make classifier fairer w.r.t to adversary
+    #        c = g + h                     # combined direction
+    #        
+    #        # add the projection term if necessary
+    #        #if projection:
+    #        #    normalize = lambda x: x / (tf.norm(x) + np.finfo(np.float32).tiny)
+    #        #    h_norm = normalize(h)
+    #        #    proj = tf.reduce_sum(h_norm * g) * h_norm
+    #        #    comb -= proj
+    #        
+    #        # and finally build the combined gradients list
+    #        var = grad_Lc_clf[i][1]
+    #        grad_comb.append((c, var))
+    #    
+    #    # compute the optimisation steps
+    #    self.opt_clf = self.optimizer.apply_gradients(grad_Lc_clf)
+    #    self.opt_adv = self.optimizer.apply_gradients(grad_La_adv)
+    #    self.opt_comb = self.optimizer.apply_gradients(grad_comb)
         
     def initialise_variables(self):
 

@@ -34,9 +34,11 @@ class Classifier(Model):
             self.logits = layers.linear(layer, self.n_classes)
             self.output = tf.reshape(layers.softmax(self.logits)[:, 1], shape=(-1, 1))
 
-        self.vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.name)
+        self.tf_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.name)
 
     def build_loss(self, labels):
+
+        print('--- Building classifier loss')
 
         # one hot encode the labels
         one_hot = tf.one_hot(tf.reshape(labels, shape=[-1]), depth=self.n_classes)
@@ -51,7 +53,7 @@ class Adversary(Model):
         
         super().__init__(name, depth, width)
         self.loss = None
-        self.vars = None
+        self.tf_vars = None
     
     @classmethod
     def create(cls, name, adv_settings):
@@ -85,7 +87,7 @@ class DummyAdversary(Adversary):
             self.loss = dummy_var**2 # i.e. goes to zero
             self.loss += 0 * tf.reduce_mean(fX) # and connects to the classifier weights
 
-        self.vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.name)
+        self.tf_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.name)
 
 
 class GMMAdversary(Adversary):
@@ -100,7 +102,7 @@ class GMMAdversary(Adversary):
             setattr(self, kw, kwargs[kw])
     
     def build_loss(self, fX, Z):
-        
+
         # nll network
         self._make_nll(fX)
         
@@ -108,6 +110,8 @@ class GMMAdversary(Adversary):
         self._make_loss(Z)
     
     def _make_nll(self, fX):
+
+        print('--- Building GMM nll model')
         
         n_components = self.n_components
         
@@ -131,9 +135,11 @@ class GMMAdversary(Adversary):
             # interpret the output layers as nll parameters
             self.nll_pars = tf.concat([mu, sigma, pi], axis=1)
 
-        self.vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.name)
+        self.tf_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.name)
     
     def _make_loss(self, Z):
+        
+        print('--- Building GMM loss')
         
         # for convenience
         n_components = self.n_components
@@ -172,6 +178,8 @@ class MINEAdversary(Adversary):
             setattr(self, kw, kwargs[kw])
             
     def build_loss(self, fX, Z):
+
+        print('--- Building MINE loss')
         
         # store the input placeholders
         fX = tf.reshape(fX, shape=(-1, 1))
@@ -208,4 +216,4 @@ class MINEAdversary(Adversary):
             self.loss = - (tf.reduce_mean(T_xy, axis=0) - tf.math.log(tf.reduce_mean(tf.math.exp(T_x_y), axis=0)))
 
         # save variables
-        self.vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.name)
+        self.tf_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.name)
