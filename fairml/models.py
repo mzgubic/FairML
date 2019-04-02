@@ -62,7 +62,8 @@ class Adversary(Model):
         
         classes = {'Dummy':DummyAdversary,
                    'GMM':GMMAdversary,
-                   'MINE':MINEAdversary}
+                   'MINE':MINEAdversary,
+                   'PtEst':PtEstAdversary}
         
         # check if implemented
         if adv_type not in classes:
@@ -72,6 +73,36 @@ class Adversary(Model):
         adversary = classes[adv_type]
         adv_settings.pop('adv_type')
         return adversary(name='{}_{}_adv'.format(name, adv_type), **adv_settings)
+
+
+class PtEstAdversary(Adversary):
+
+    def __init__(self, name, depth=2, width=20, **kwargs):
+
+        super().__init__(name, depth, width, **kwargs)
+        for kw in kwargs:
+            setattr(self, kw, kwargs[kw])
+
+    def build_loss(self, fX, Z):
+
+        # forward pass
+        with tf.variable_scope(self.name):
+
+            # input layer
+            layer = fX
+
+            # hidden layers
+            for _ in range(self.depth):
+                layer = layers.relu(layer, self.width)
+
+            # output layer
+            self.output = layers.linear(layer, 1)
+
+        # variables
+        self.tf_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.name)
+
+        # create the loss
+        self.loss = tf.reduce_mean((self.output - Z)**2)
 
 
 class DummyAdversary(Adversary):
@@ -217,3 +248,5 @@ class MINEAdversary(Adversary):
 
         # save variables
         self.tf_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.name)
+
+
