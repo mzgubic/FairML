@@ -11,59 +11,59 @@ import plot
 class TFEnvironment:
     
     def __init__(self, generate, name):
-        
+
         # save variables
         self.generate = generate
         self.name = name
         self._xyz = ['X', 'Y', 'Z']
-        
+
         # record losses
         self.history = {'L_clf':[], 'L_adv':[], 'L_comb':[],
                         'KS1':[], 'KS_1':[], 'KSp1':[], 'KSp_1':[], 
                         'auroc1':[], 'auroc0':[], 'auroc_1':[]}
-        
+
         # start the session
         self._start_session()
-    
+
     def _start_session(self):
-        
+
         # start the session
         config=tf.ConfigProto(intra_op_parallelism_threads = 32,
                                  inter_op_parallelism_threads = 32,
                                  allow_soft_placement = True,
                                  device_count = {'CPU': 2})
-        
+
         self.sess = tf.Session(config=config)
-    
+
     def build_graph(self, clf_settings, adv_settings):
         
         print('--- Building computational graphs')
-        
+
         # build the inputs
         batch = self.generate(10)
         self._in = {}
         for xyz in self._xyz:
             tftype = tf.int32 if xyz == 'Y' else tf.float32
             self._in[xyz] = tf.placeholder(tftype, shape=(None, batch[xyz].shape[1]), name='{}_in'.format(xyz))
-        
+
         # build the classifier graph
         self.clf = models.Classifier(name=self.name+'_clf', **clf_settings)
         self.clf.build_forward(self._in['X'])
-        
+
         # build the adversary graph
         self.adv = models.Adversary.create(self.name, adv_settings)
-        
+
     def build_loss(self):
-        
+
         print('--- Building computational graphs for losses')
-        
+
         # classifier loss
         self.clf.build_loss(self._in['Y'])
-        
+
         # adversary loss
         self.adv.build_loss(self.clf.output, self._in['Z'])
-    
-    def build_opt(self, lam=1.0, opt_type='AdamOptimizer', learning_rate=0.05, projection=False):
+
+    def build_opt_deprecated(self, lam=1.0, opt_type='AdamOptimizer', learning_rate=0.05, projection=False):
         
         print('--- Building computational graphs for optimisations')
         
@@ -77,68 +77,68 @@ class TFEnvironment:
         self.opt_adv = self.optimizer.minimize(self.adv.loss, var_list=self.adv.tf_vars)
         comb_loss = self.clf.loss - lam * self.adv.loss
         self.opt_comb = self.optimizer.minimize(comb_loss, var_list=self.clf.tf_vars)
-    
-    #def build_opt_2(self, lam=1.0, opt_type='AdamOptimizer', learning_rate=0.05, projection=False):
-    #    
-    #    print('--- Building computational graphs for optimisations')
-    #    
-    #    # optimizer type
-    #    opt = getattr(tf.train, opt_type)
-    #    self.optimizer = opt(learning_rate=learning_rate)
-    #    self.lam = lam
-    #    
-    #    # compute the gradients (d(Loss_clf)/d(weights_clf))
-    #    grad_Lc_clf = self.optimizer.compute_gradients(self.clf.loss, var_list=self.clf.tf_vars)
-    #    grad_La_clf = self.optimizer.compute_gradients(self.adv.loss, var_list=self.clf.tf_vars)
-    #    grad_La_adv = self.optimizer.compute_gradients(self.adv.loss, var_list=self.adv.tf_vars)
-    #    
-    #    grad_comb = [] # the adversarial part
-    #    for i in range(len(grad_Lc_clf)):
-    #        
-    #        # combine the gradients
-    #        g = grad_Lc_clf[i][0]         # direction to improve classifier
-    #        h = - lam * grad_La_clf[i][0] # direction to make classifier fairer w.r.t to adversary
-    #        c = g + h                     # combined direction
-    #        
-    #        # add the projection term if necessary
-    #        #if projection:
-    #        #    normalize = lambda x: x / (tf.norm(x) + np.finfo(np.float32).tiny)
-    #        #    h_norm = normalize(h)
-    #        #    proj = tf.reduce_sum(h_norm * g) * h_norm
-    #        #    comb -= proj
-    #        
-    #        # and finally build the combined gradients list
-    #        var = grad_Lc_clf[i][1]
-    #        grad_comb.append((c, var))
-    #    
-    #    # compute the optimisation steps
-    #    self.opt_clf = self.optimizer.apply_gradients(grad_Lc_clf)
-    #    self.opt_adv = self.optimizer.apply_gradients(grad_La_adv)
-    #    self.opt_comb = self.optimizer.apply_gradients(grad_comb)
-        
+
+    def build_opt(self, lam=1.0, opt_type='AdamOptimizer', learning_rate=0.05, projection=False):
+
+        print('--- Building computational graphs for optimisations')
+
+        # optimizer type
+        opt = getattr(tf.train, opt_type)
+        self.optimizer = opt(learning_rate=learning_rate)
+        self.lam = lam
+
+        # compute the gradients (d(Loss_clf)/d(weights_clf))
+        grad_Lc_clf = self.optimizer.compute_gradients(self.clf.loss, var_list=self.clf.tf_vars)
+        grad_La_clf = self.optimizer.compute_gradients(self.adv.loss, var_list=self.clf.tf_vars)
+        grad_La_adv = self.optimizer.compute_gradients(self.adv.loss, var_list=self.adv.tf_vars)
+
+        grad_comb = [] # the adversarial part
+        for i in range(len(grad_Lc_clf)):
+
+            # combine the gradients
+            g = grad_Lc_clf[i][0]         # direction to improve classifier
+            h = - lam * grad_La_clf[i][0] # direction to make classifier fairer w.r.t to adversary
+            c = g + h                     # combined direction
+
+            # add the projection term if necessary
+            #if projection:
+            #    normalize = lambda x: x / (tf.norm(x) + np.finfo(np.float32).tiny)
+            #    h_norm = normalize(h)
+            #    proj = tf.reduce_sum(h_norm * g) * h_norm
+            #    comb -= proj
+
+            # and finally build the combined gradients list
+            var = grad_Lc_clf[i][1]
+            grad_comb.append((c, var))
+
+        # compute the optimisation steps
+        self.opt_clf = self.optimizer.apply_gradients(grad_Lc_clf)
+        self.opt_adv = self.optimizer.apply_gradients(grad_La_adv)
+        self.opt_comb = self.optimizer.apply_gradients(grad_comb)
+
     def initialise_variables(self):
 
         print('--- Initialising TensorFlow variables')
 
         self.sess.run(tf.global_variables_initializer())
-    
+
     def _get_feed_dict(self, batch):
-        
+
         return {self._in[xyz]:batch[xyz] for xyz in self._xyz}
-    
+
     def pretrain_step_clf(self, batch_size, write=False):
-        
+
         # pre-training the classifier (no adversary)
         batch = self.generate(batch_size)
         feed_dict = self._get_feed_dict(batch)
         self.sess.run(self.opt_clf, feed_dict=feed_dict)
-        
+
         # update history
         if write:
             self._write_history(batch_size)
-    
+
     def train_step_adv(self, batch_size, write=False):
-        
+
         # train the adversary
         batch = self.generate(batch_size)
         feed_dict = self._get_feed_dict(batch)
