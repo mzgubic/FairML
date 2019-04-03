@@ -116,11 +116,15 @@ def history(ax, metric, style='-', color='k', label='No label', cut_first=0, sho
         for i, h in enumerate(metric):
             histories[i] = np.array(metric[i])
             
-        mean = np.mean(histories, axis=0)
-        std = np.std(histories, axis=0)
+        #middle = np.mean(histories, axis=0)
+        #up = middle+np.std(histories, axis=0)
+        #down = middle-np.std(histories, axis=0)
+        middle = np.percentile(histories, 50, axis=0)
+        up = np.percentile(histories, 84, axis=0)
+        down = np.percentile(histories, 16, axis=0)
     else:
         n_steps = len(metric)
-        mean = np.array(metric)
+        middle = np.array(metric)
     
     # cut away first N to get 'zoom in' effect on the y-scale
     n_cut = cut_first if n_steps > 30 else 0
@@ -135,8 +139,8 @@ def history(ax, metric, style='-', color='k', label='No label', cut_first=0, sho
                 ax.plot(xs, histories[i][n_cut:], linestyle=style, c=color, alpha=0.2)
 
         # plot std dev
-        ax.fill_between(xs, (mean-std)[n_cut:], (mean+std)[n_cut:], color=color, alpha=0.2)
+        ax.fill_between(xs, down[n_cut:], up[n_cut:], color=color, alpha=0.2)
         
     # in any case plot the mean
-    ax.plot(xs, mean[n_cut:], linestyle=style, c=color, label=label)
+    ax.plot(xs, middle[n_cut:], linestyle=style, c=color, label=label)
     ax.set_xlim(0, n_steps)
