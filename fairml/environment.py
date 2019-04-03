@@ -23,6 +23,7 @@ class TFEnvironment:
                         'auroc1':[], 'auroc0':[], 'auroc_1':[]}
 
         # start the session
+        print('Welcome to {} TensorFlow environment'.format(self.name))
         self._start_session()
 
     def _start_session(self):
@@ -324,4 +325,37 @@ class TFEnvironment:
         ax[4].set_xlabel('Training steps')
 
 
+def bootcamp(N, generate_toys, clf_settings, adv_settings, opt_settings, trn_settings):
 
+    # train a collection of environments
+    envs = []
+    for i in range(N):
+
+        # make the environment
+        tfe = TFEnvironment(generate_toys, 'env_{}'.format(i))
+        tfe.build_graph(clf_settings, adv_settings)
+        tfe.build_loss()
+        tfe.build_opt(**opt_settings)
+        tfe.initialise_variables()
+
+        # pretrain
+        batch_size = trn_settings['batch_size']
+        n_pretrain = trn_settings['n_pretrain']
+        for _ in range(n_pretrain):
+            tfe.pretrain_step_clf(batch_size, write=False)
+        for _ in range(n_pretrain):
+            tfe.train_step_adv(batch_size, write=False)
+    
+        # train
+        n_train = trn_settings['n_train']
+        for _ in range(n_train):
+
+            tfe.train_step_clf(batch_size)
+            for __ in range(5):
+                tfe.train_step_adv(batch_size)
+            
+        # append to envs
+        envs.append(tfe)
+    
+    # return the collection
+    return envs
