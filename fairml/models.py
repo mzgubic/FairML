@@ -245,7 +245,8 @@ class MINEAdversary(Adversary):
             T_x_y = output[N_batch:]
 
             # compute the loss
-            self.loss = - (tf.reduce_mean(T_xy, axis=0) - tf.math.log(tf.reduce_mean(tf.math.exp(T_x_y), axis=0)))
+            #self.loss = - (tf.reduce_mean(T_xy, axis=0) - tf.math.log(tf.reduce_mean(tf.math.exp(T_x_y), axis=0)))
+            self.loss = - (tf.reduce_mean(T_xy) - tf.math.log(tf.reduce_mean(tf.math.exp(T_x_y))))
 
         # save variables
         self.tf_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.name)
