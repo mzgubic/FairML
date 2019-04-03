@@ -103,7 +103,7 @@ def decision_boundary(ax, batch, preds):
     plt.colorbar(dec, ax=ax)
 
 
-def history(ax, metric, style='-', color='k', label='No label', cut_first=0):
+def history(ax, metric, style='-', color='k', label='No label', cut_first=0, show_individual=False):
 
     # in case multiple values are given, compute mean and std and show them
     do_uncertainty = isinstance(metric[0], list) or isinstance(metric[0], np.ndarray)
@@ -130,8 +130,9 @@ def history(ax, metric, style='-', color='k', label='No label', cut_first=0):
     if do_uncertainty:
 
         # plot individual losses
-        for i in range(n_histories):
-            ax.plot(xs, histories[i][n_cut:], linestyle=style, c=color, alpha=0.2)
+        if show_individual:
+            for i in range(n_histories):
+                ax.plot(xs, histories[i][n_cut:], linestyle=style, c=color, alpha=0.2)
 
         # plot std dev
         ax.fill_between(xs, (mean-std)[n_cut:], (mean+std)[n_cut:], color=color, alpha=0.2)
