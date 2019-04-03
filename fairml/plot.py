@@ -110,26 +110,32 @@ def history(ax, metric, style='-', color='k', label='No label', cut_first=0):
     
     # compute mean and std
     if do_uncertainty:
-        #l = [np.array(h) for h in metric]
-        histories = np.zeros(shape=(len(metric), len(metric[0])))
+        n_histories = len(metric)
+        n_steps = len(metric[0])
+        histories = np.zeros(shape=(n_histories, n_steps))
         for i, h in enumerate(metric):
             histories[i] = np.array(metric[i])
             
         mean = np.mean(histories, axis=0)
         std = np.std(histories, axis=0)
     else:
+        n_steps = len(metric)
         mean = np.array(metric)
     
     # cut away first N to get 'zoom in' effect on the y-scale
-    n_tot = len(mean)
-    n_cut = cut_first if n_tot > 30 else 0
+    n_cut = cut_first if n_steps > 30 else 0
 
     # plot
-    xs = range(n_cut, n_tot)
+    xs = range(n_cut, n_steps)
     if do_uncertainty:
-        ax.plot(xs, mean[n_cut:], linestyle=style, c=color, label=label)
+
+        # plot individual losses
+        for i in range(n_histories):
+            ax.plot(xs, histories[i][n_cut:], linestyle=style, c=color, alpha=0.2)
+
+        # plot std dev
         ax.fill_between(xs, (mean-std)[n_cut:], (mean+std)[n_cut:], color=color, alpha=0.2)
         
     # in any case plot the mean
     ax.plot(xs, mean[n_cut:], linestyle=style, c=color, label=label)
-    ax.set_xlim(0, n_tot)
+    ax.set_xlim(0, n_steps)
