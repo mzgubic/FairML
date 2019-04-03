@@ -103,13 +103,33 @@ def decision_boundary(ax, batch, preds):
     plt.colorbar(dec, ax=ax)
 
 
-def history(ax, metric, style, color, label, cut_first=0):
+def history(ax, metric, style='-', color='k', label='No label', cut_first=0):
 
+    # in case multiple values are given, compute mean and std and show them
+    do_uncertainty = isinstance(metric[0], list) or isinstance(metric[0], np.ndarray)
+    
+    # compute mean and std
+    if do_uncertainty:
+        #l = [np.array(h) for h in metric]
+        histories = np.zeros(shape=(len(metric), len(metric[0])))
+        for i, h in enumerate(metric):
+            histories[i] = np.array(metric[i])
+            
+        mean = np.mean(histories, axis=0)
+        std = np.std(histories, axis=0)
+    else:
+        mean = np.array(metric)
+    
     # cut away first N to get 'zoom in' effect on the y-scale
-    n_tot = len(metric)
+    n_tot = len(mean)
     n_cut = cut_first if n_tot > 30 else 0
 
     # plot
-    metric = metric[n_cut:]
-    ax.plot(range(n_cut, n_tot), metric, linestyle=style, c=color, label=label)
+    xs = range(n_cut, n_tot)
+    if do_uncertainty:
+        ax.plot(xs, mean[n_cut:], linestyle=style, c=color, label=label)
+        ax.fill_between(xs, (mean-std)[n_cut:], (mean+std)[n_cut:], color=color, alpha=0.2)
+        
+    # in any case plot the mean
+    ax.plot(xs, mean[n_cut:], linestyle=style, c=color, label=label)
     ax.set_xlim(0, n_tot)
