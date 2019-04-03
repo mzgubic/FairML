@@ -71,8 +71,9 @@ class Adversary(Model):
         
         # return the right one
         adversary = classes[adv_type]
-        adv_settings.pop('adv_type')
-        return adversary(name='{}_{}_adv'.format(name, adv_type), **adv_settings)
+        kwargs = adv_settings.copy()
+        kwargs.pop('adv_type')
+        return adversary(name='{}_{}_adv'.format(name, adv_type), **kwargs)
 
 
 class PtEstAdversary(Adversary):
