@@ -45,7 +45,9 @@ def toys_single_Z_diff(n_samples, z=None):
         Z = np.concatenate([Z0, Z1])
 
     else:
-        Z = z * np.ones(n_samples)
+        Z0 = z * np.ones(n_samples//2)
+        Z1 = z * np.ones(n_samples//2)
+        Z = np.concatenate([Z0, Z1])
 
     # and Xs of course depend on both Z and Y
     X0 = np.random.multivariate_normal([0, 0], [[sigma, -.5*sigma], [-.5*sigma, sigma]], size=n_samples//2)
