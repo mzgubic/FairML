@@ -101,11 +101,11 @@ class TFEnvironment:
             c = g + h                     # combined direction
 
             # add the projection term if necessary
-            #if projection:
-            #    normalize = lambda x: x / (tf.norm(x) + np.finfo(np.float32).tiny)
-            #    h_norm = normalize(h)
-            #    proj = tf.reduce_sum(h_norm * g) * h_norm
-            #    comb -= proj
+            if projection:
+                normalize = lambda x: x / (tf.norm(x) + np.finfo(np.float32).tiny)
+                h_norm = normalize(h)
+                proj = tf.reduce_sum(h_norm * g) * h_norm
+                c -= proj
 
             # and finally build the combined gradients list
             var = grad_Lc_clf[i][1]
