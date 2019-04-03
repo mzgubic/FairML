@@ -1,3 +1,4 @@
+import uuid
 import matplotlib.pyplot as plt
 import scipy
 import numpy as np
@@ -332,7 +333,7 @@ def bootcamp(N, generate_toys, clf_settings, adv_settings, opt_settings, trn_set
     for i in range(N):
 
         # make the environment
-        tfe = TFEnvironment(generate_toys, 'env_{}'.format(i))
+        tfe = TFEnvironment(generate_toys, 'env_{}'.format(uuid.uuid4()))
         tfe.build_graph(clf_settings, adv_settings)
         tfe.build_loss()
         tfe.build_opt(**opt_settings)
