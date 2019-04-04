@@ -8,7 +8,11 @@ def generate_toys(n_samples, z=None):
 
     # Z
     if z == None:
-        Z = np.random.normal(0, 1, size=n_samples)
+        #Z = np.random.normal(0, 1, size=n_samples)
+        #Z = np.random.exponential(scale = 0.5, size = n_samples) - 2
+        #Z = np.random.uniform(low = -2, high = 2, size = n_samples)
+        Z = np.random.choice([-2, 0, 2], p = [0.33, 0.33, 0.34], size = n_samples)
+        #Z = np.random.choice([-2, 0, 2], p = [0.5, 0.5], size = n_samples)
     else:
         Z = z * np.ones(n_samples)
 

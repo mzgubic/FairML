@@ -2,12 +2,13 @@ import os
 import tensorflow as tf
 import numpy as np
 import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve
 from sklearn.neighbors import KernelDensity
 
 
-def plot_classifier_performance(data, pname, batch=False):
+def plot_classifier_performance(data, pname, batch=True):
 
     # predict on special values of Z
     n_samples = 10000
@@ -72,7 +73,7 @@ def plot_classifier_performance(data, pname, batch=False):
     plt.close(fig)
 
 
-def plot_2D(fX, Y, Z, pname, batch=False):
+def plot_2D(fX, Y, Z, pname, batch=True):
     
     # percentiles
     Z_median = np.percentile(Z, 50)
@@ -169,7 +170,7 @@ def plot_losses(loss_D, loss_R, loss_DR, MIs, adversary, pname):
     plt.close(fig)
 
 
-def plot_MI(MINEs, MIs, n_adv_cycles, pname, batch=False):
+def plot_MI(MINEs, MIs, n_adv_cycles, pname, batch=True):
     
     # plot
     fig, ax = plt.subplots(figsize=(7,7))
