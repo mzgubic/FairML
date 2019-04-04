@@ -49,12 +49,27 @@ def variates_kde(ax, batch, x_cpt):
     if x_cpt == 0:
         ax.plot(x_plot, np.exp(log_0), color='k')
         ax.plot(x_plot, np.exp(log_1), color='r')
+        ax.set_xlim(x_min, x_max)
         
     # right (change x, y in plotting to make a vertical plot)
     else:
         ax.plot(np.exp(log_0), x_plot, color='k')
         ax.plot(np.exp(log_1), x_plot, color='r')
-        
+        ax.set_ylim(x_min, x_max)
+   
+
+def variates_zs(ax, batch):
+
+    # prepare
+    X, Y, Z = XYZ(batch)
+
+    # draw 
+    bins = 20
+    ax.hist(Z[Y==0], bins=bins, color='k', alpha=0.4, label='Z|Y=0', density=True, range=(x_min, x_max))
+    ax.hist(Z[Y==1], bins=bins, color='r', alpha=0.4, label='Z|Y=1', density=True, range=(x_min, x_max))
+
+    ax.legend(loc='best')
+
 
 def roc_curves(ax, batch1, batch0, batch_1, preds1, preds0, preds_1):
     
@@ -116,9 +131,6 @@ def history(ax, metric, style='-', color='k', label='No label', cut_first=0, sho
         for i, h in enumerate(metric):
             histories[i] = np.array(metric[i])
             
-        #middle = np.mean(histories, axis=0)
-        #up = middle+np.std(histories, axis=0)
-        #down = middle-np.std(histories, axis=0)
         middle = np.percentile(histories, 50, axis=0)
         up = np.percentile(histories, 84, axis=0)
         down = np.percentile(histories, 16, axis=0)
@@ -154,10 +166,10 @@ def show_variates(generate, batch_size):
     batch = generate(batch_size)
     fig, ax = plt.subplots(2, 2,
                            figsize=(7,7),
-                           gridspec_kw={'height_ratios':[1,4],
-                                        'width_ratios':[4,1]},
-                           sharex='col',
-                           sharey='row')
+                           gridspec_kw={'height_ratios':[1,3],
+                                        'width_ratios':[3,1]})
+                           #sharex='col',
+                           #sharey='row')
 
     # main plot
     variates_main(ax[1,0], batch)
@@ -168,7 +180,7 @@ def show_variates(generate, batch_size):
     # right plot
     variates_kde(ax[1,1], batch, x_cpt=1)
 
-    # empty axes
-    fig.delaxes(ax[0,1])
+    # corner plot
+    variates_zs(ax[0,1], batch)
 
 

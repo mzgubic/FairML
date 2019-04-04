@@ -8,14 +8,17 @@ def toys_simple(n_samples, z=None):
 
     # Z
     if z == None:
-        Z = np.random.normal(0, 1, size=n_samples)
+        Z0 = np.zeros(n_samples//2)
+        Z1 = np.random.normal(0, 1, size=n_samples//2)
     else:
-        Z = z * np.ones(n_samples)
+        Z0 = z * np.ones(n_samples//2)
+        Z1 = z * np.ones(n_samples//2)
+    Z = np.concatenate([Z0, Z1])
 
     # X
     X0 = np.random.multivariate_normal([0, 0], [[1, -0.5],[-0.5, 1]], size=n_samples//2)
     X1 = np.random.multivariate_normal([1, 1], 0.5*np.eye(2), size=n_samples//2)
-    X1[:,1] += Z[n_samples//2:]
+    X1[:,1] += Z1
     X = np.concatenate([X0, X1])
 
     return {'X':X, 'Y':Y.reshape(-1, 1), 'Z':Z.reshape(-1, 1)}
@@ -31,23 +34,17 @@ def toys_expo_Z(n_samples, z=None):
 
     # Z depends on Y (for training, can evaluate on any samples)
     if z == None:
-
-        # exponential
-        Z0 = np.random.exponential(0.5, size=n_samples//2)
+        Z0 = np.random.exponential(1.0, size=n_samples//2)
         Z1 = np.random.exponential(2.0, size=n_samples//2)
-
-        # combine them
-        Z = np.concatenate([Z0, Z1])
-
     else:
         Z0 = z * np.ones(n_samples//2)
         Z1 = z * np.ones(n_samples//2)
-        Z = np.concatenate([Z0, Z1])
+    Z = np.concatenate([Z0, Z1])
 
     # and Xs of course depend on both Z and Y
     X0 = np.random.multivariate_normal([0, 0], [[sigma, -.5*sigma], [-.5*sigma, sigma]], size=n_samples//2)
     X0[:, 1] += Z0
-    X1 = np.random.multivariate_normal([dx, -1], [[sigma, 0], [0, sigma]], size=n_samples//2)
+    X1 = np.random.multivariate_normal([dx, 0], [[sigma, 0], [0, sigma]], size=n_samples//2)
     X1[:, 1] += Z1
     X = np.concatenate([X0, X1])
 
