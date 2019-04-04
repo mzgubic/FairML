@@ -23,7 +23,7 @@ def variates_main(ax, batch):
     
     # plot
     ax.scatter(X[Y==0,0], X[Y==0,1], marker='o', color='k', alpha=0.2, label='Y=0')
-    ax.scatter(X[Y==1,0], X[Y==1,1], marker='x', c=Z[n_samples//2:], alpha=0.4, cmap='Reds', label='Y=1')
+    ax.scatter(X[Y==1,0], X[Y==1,1], marker='x', c=Z[n_samples//2:], alpha=0.4, cmap='Reds', label='Y=1', vmin=-3, vmax=3)
     
     # cosmetics
     ax.set_ylim(x_min, x_max)
@@ -144,3 +144,31 @@ def history(ax, metric, style='-', color='k', label='No label', cut_first=0, sho
     # in any case plot the mean
     ax.plot(xs, middle[n_cut:], linestyle=style, c=color, label=label)
     ax.set_xlim(0, n_steps)
+
+
+def show_variates(generate, batch_size):
+    
+    print('--- Plot random variates')
+    
+    # prepare the plot
+    batch = generate(batch_size)
+    fig, ax = plt.subplots(2, 2,
+                           figsize=(7,7),
+                           gridspec_kw={'height_ratios':[1,4],
+                                        'width_ratios':[4,1]},
+                           sharex='col',
+                           sharey='row')
+
+    # main plot
+    variates_main(ax[1,0], batch)
+    
+    # top plot
+    variates_kde(ax[0,0], batch, x_cpt=0)
+    
+    # right plot
+    variates_kde(ax[1,1], batch, x_cpt=1)
+
+    # empty axes
+    fig.delaxes(ax[0,1])
+
+

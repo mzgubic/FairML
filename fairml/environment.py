@@ -236,32 +236,6 @@ class TFEnvironment:
         
         return preds
 
-    def show_variates(self, batch_size):
-        
-        print('--- Plot random variates')
-        
-        # prepare the plot
-        batch = self.generate(batch_size)
-        fig, ax = plt.subplots(2, 2,
-                               figsize=(7,7),
-                               gridspec_kw={'height_ratios':[1,4],
-                                            'width_ratios':[4,1]},
-                               sharex='col',
-                               sharey='row')
-
-        # main plot
-        plot.variates_main(ax[1,0], batch)
-        
-        # top plot
-        plot.variates_kde(ax[0,0], batch, x_cpt=0)
-        
-        # right plot
-        plot.variates_kde(ax[1,1], batch, x_cpt=1)
-    
-        # empty axes
-        fig.delaxes(ax[0,1])
-        fig.show()
-    
     def show_performance(self, batch_size):
         
         print('--- Plot classifier performance and fairness')
@@ -360,3 +334,4 @@ def bootcamp(N, generate_toys, clf_settings, adv_settings, opt_settings, trn_set
     
     # return the collection
     return envs
+
