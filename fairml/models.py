@@ -202,7 +202,7 @@ class GMMAdversary(Adversary):
 
 class MINEAdversary(Adversary):
     
-    def __init__(self, name, depth=1, width=10, **kwargs):
+    def __init__(self, name, depth=2, width=10, **kwargs):
         
         super().__init__(name, depth, width, **kwargs)
         
