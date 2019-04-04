@@ -281,7 +281,7 @@ class TFEnvironment:
         plot.history(ax[1], self.history['L_adv'], '-', 'crimson', 'Adversary loss', remove_first)
         
         # combined loss
-        plot.history(ax[0], self.history['L_comb'], '-', 'k', 'Combined loss', remove_first)
+        plot.history(ax[2], self.history['L_comb'], '-', 'k', 'Combined loss', remove_first)
         
         # KS metric
         plot.history(ax[3], self.history['KS1'], '-', 'darkred', 'KS (z=1, z=0)')
