@@ -20,8 +20,8 @@ class TFEnvironment:
 
         # record losses
         self.history = {'L_clf':[], 'L_adv':[], 'L_comb':[],
-                        'KS1':[], 'KS_1':[], 'KSp1':[], 'KSp_1':[], 
-                        'auroc1':[], 'auroc0':[], 'auroc_1':[]}
+                        'KS1':[], 'KS_1':[], 'KSp1':[], 'KSp_1':[], 'KS':[],
+                        'auroc1':[], 'auroc0':[], 'auroc_1':[], 'auroc-mean':[], 'auroc-std':[]}
 
         # start the session
         print('Welcome to {} TensorFlow environment'.format(self.name))
@@ -182,9 +182,12 @@ class TFEnvironment:
             self.history['KSp1'].append(ks1[1])
             self.history['KS_1'].append(ks_1[0])
             self.history['KSp_1'].append(ks_1[1])
+            self.history['KS'].append(np.mean([ks1[0], ks_1[0]]))
             self.history['auroc1'].append(auroc1)
             self.history['auroc0'].append(auroc0)
             self.history['auroc_1'].append(auroc_1)
+            self.history['auroc-mean'].append(np.mean([auroc1, auroc0, auroc_1]))
+            self.history['auroc-std'].append(np.std([auroc1, auroc0, auroc_1]))
         except ValueError:
             print('ValueError caught, training probably failed')
     
@@ -277,7 +280,7 @@ class TFEnvironment:
         remove_first = 0
         
         # prepare the plot
-        fig, ax = plt.subplots(5, figsize=(7,10), sharex=True)
+        fig, ax = plt.subplots(8, figsize=(7,16), sharex=True)
         fig.suptitle('Losses for {} (lambda={})'.format(self.adv.__class__.__name__, self.lam))
         
         # classifier loss
@@ -289,16 +292,25 @@ class TFEnvironment:
         # combined loss
         plot.history(ax[2], self.history['L_comb'], '-', 'k', 'Combined loss', remove_first)
         
-        # KS metric
-        plot.history(ax[3], self.history['KS1'], '-', 'darkred', 'KS (z=1, z=0)')
-        plot.history(ax[3], self.history['KSp1'], ':', 'darkred', 'p-value (z=1, z=0)')
-        plot.history(ax[3], self.history['KS_1'], '-', 'tomato', 'KS (z=-1, z=0)')
-        plot.history(ax[3], self.history['KSp_1'], ':', 'tomato', 'p-value (z=-1, z=0)')
-        
         # accuracy
-        plot.history(ax[4], self.history['auroc1'], '-', 'darkred', 'AUROC (z=1)', remove_first)
-        plot.history(ax[4], self.history['auroc0'], '-', 'red', 'AUROC (z=0)', remove_first)
-        plot.history(ax[4], self.history['auroc_1'], '-', 'tomato', 'AUROC (z=-1)', remove_first)
+        plot.history(ax[3], self.history['auroc1'], '-', 'darkblue', 'AUROC (z=1)', remove_first)
+        plot.history(ax[3], self.history['auroc0'], '-', 'royalblue', 'AUROC (z=0)', remove_first)
+        plot.history(ax[3], self.history['auroc_1'], '-', 'lightskyblue', 'AUROC (z=-1)', remove_first)
+
+        # summary accuracy (mean)
+        plot.history(ax[4], self.history['auroc-mean'], '-', 'royalblue', 'mean(AUROC), Z={1,0,-1}', remove_first)
+
+        # summary accuracy (std)
+        plot.history(ax[5], self.history['auroc-std'], ':', 'royalblue', 'std(AUROC), Z={1,0,-1}', remove_first)
+
+        # KS metric
+        plot.history(ax[6], self.history['KS1'], '-', 'darkred', 'KS (z=1, z=0)')
+        plot.history(ax[6], self.history['KSp1'], ':', 'darkred', 'p-value (z=1, z=0)')
+        plot.history(ax[6], self.history['KS_1'], '-', 'tomato', 'KS (z=-1, z=0)')
+        plot.history(ax[6], self.history['KSp_1'], ':', 'tomato', 'p-value (z=-1, z=0)')
+
+        # summary KS metric
+        plot.history(ax[7], self.history['KS'], '-', 'red', 'KS metric', remove_first)
         
         # cosmetics
         for i in range(len(ax)):
