@@ -109,7 +109,7 @@ def decision_boundary(ax, batch, preds):
     X, Y, Z = XYZ(batch)
     
     # plot
-    dec = ax.tricontourf(X[:,0], X[:,1], preds.ravel(), 20)
+    dec = ax.tricontourf(X[:,0], X[:,1], preds.ravel(), 20, extend='both')
     ax.set_ylim(x_min, x_max)
     ax.set_xlim(x_min, x_max)
     ax.set_title('Decision boundary')
@@ -129,7 +129,10 @@ def history(ax, metric, style='-', color='k', label='No label', cut_first=0, sho
         n_steps = len(metric[0])
         histories = np.zeros(shape=(n_histories, n_steps))
         for i, h in enumerate(metric):
-            histories[i] = np.array(metric[i])
+            try:
+                histories[i] = np.array(metric[i])
+            except ValueError: # if training failed, skip
+                pass
             
         middle = np.percentile(histories, 50, axis=0)
         up = np.percentile(histories, 84, axis=0)

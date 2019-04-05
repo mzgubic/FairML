@@ -163,27 +163,30 @@ class TFEnvironment:
     
     def _write_history(self, batch_size):
         
-        # get current losses
-        batch = self.generate(batch_size)
-        loss_clf, loss_adv, loss_comb = self._losses(batch)
-        
-        # get current metrics
-        ks1, ks_1 = self._ks_metric(batch_size)
-        
-        # get performance metrics
-        auroc1, auroc0, auroc_1 = self._roc_auc(batch_size)
-        
-        # append
-        self.history['L_clf'].append(loss_clf)
-        self.history['L_adv'].append(loss_adv)
-        self.history['L_comb'].append(loss_comb)
-        self.history['KS1'].append(ks1[0])
-        self.history['KSp1'].append(ks1[1])
-        self.history['KS_1'].append(ks_1[0])
-        self.history['KSp_1'].append(ks_1[1])
-        self.history['auroc1'].append(auroc1)
-        self.history['auroc0'].append(auroc0)
-        self.history['auroc_1'].append(auroc_1)
+        try:
+            # get current losses
+            batch = self.generate(batch_size)
+            loss_clf, loss_adv, loss_comb = self._losses(batch)
+            
+            # get current metrics
+            ks1, ks_1 = self._ks_metric(batch_size)
+            
+            # get performance metrics
+            auroc1, auroc0, auroc_1 = self._roc_auc(batch_size)
+            
+            # append
+            self.history['L_clf'].append(loss_clf)
+            self.history['L_adv'].append(loss_adv)
+            self.history['L_comb'].append(loss_comb)
+            self.history['KS1'].append(ks1[0])
+            self.history['KSp1'].append(ks1[1])
+            self.history['KS_1'].append(ks_1[0])
+            self.history['KSp_1'].append(ks_1[1])
+            self.history['auroc1'].append(auroc1)
+            self.history['auroc0'].append(auroc0)
+            self.history['auroc_1'].append(auroc_1)
+        except ValueError:
+            print('ValueError caught, training probably failed')
     
     def _losses(self, batch):
         
@@ -240,31 +243,34 @@ class TFEnvironment:
         
         print('--- Plot classifier performance and fairness')
         
-        # get predictions
-        batch = {}
-        preds = {}
-        for z in [None, 1, 0, -1]:
-            batch[z] = self.generate(batch_size, z=z)
-            preds[z] = self.predict(batch[z])
-        
-        # prepare the figure
-        fig, ax = plt.subplots(2, 2, figsize=(10, 10))
-        fig.suptitle('Performance for {} (lambda={})'.format(self.adv.__class__.__name__, self.lam))
-        
-        # plot the variates
-        plot.variates_main(ax[0,0], batch[None])
-        
-        # plot the ROC curves
-        plot.roc_curves(ax[1,0], batch[1], batch[0], batch[-1], preds[1], preds[0], preds[-1])
-        
-        # plot the classifier output
-        plot.clf_outputs(ax[1,1], preds[1], preds[0], preds[-1])
-        
-        # plot the decision boundary
-        plot.decision_boundary(ax[0,1], batch[None], preds[None])
-        
-        # show
-        fig.show()
+        try:
+            # get predictions
+            batch = {}
+            preds = {}
+            for z in [None, 1, 0, -1]:
+                batch[z] = self.generate(batch_size, z=z)
+                preds[z] = self.predict(batch[z])
+            
+            # prepare the figure
+            fig, ax = plt.subplots(2, 2, figsize=(10, 10))
+            fig.suptitle('Performance for {} (lambda={})'.format(self.adv.__class__.__name__, self.lam))
+            
+            # plot the variates
+            plot.variates_main(ax[0,0], batch[None])
+            
+            # plot the ROC curves
+            plot.roc_curves(ax[1,0], batch[1], batch[0], batch[-1], preds[1], preds[0], preds[-1])
+            
+            # plot the classifier output
+            plot.clf_outputs(ax[1,1], preds[1], preds[0], preds[-1])
+            
+            # plot the decision boundary
+            plot.decision_boundary(ax[0,1], batch[None], preds[None])
+            
+            # show
+            fig.show()
+        except ValueError:
+            print('ValueError caught, probably not converged')
         
     def show_history(self):
         

@@ -50,7 +50,7 @@ def toys_expo_Z(n_samples, z=None, sigma=1.0):
     return {'X':X, 'Y':Y.reshape(-1, 1), 'Z':Z.reshape(-1, 1)}
 
 
-def toys_peaked_Z(n_samples, z=None, sigma=1.0):
+def toys_discrete_Z(n_samples, z=None, sigma=1.0):
 
     # Y is the target
     Y = np.zeros(n_samples)
