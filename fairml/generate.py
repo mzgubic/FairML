@@ -1,6 +1,6 @@
 import numpy as np
 
-def toys_simple(n_samples, z=None):
+def toys_simple(n_samples, z=None, sigma=1.0):
 
     # Y
     Y = np.zeros(n_samples)
