@@ -301,7 +301,7 @@ class TFEnvironment:
         plot.history(ax[4], self.history['auroc-mean'], '-', 'royalblue', 'mean(AUROC), Z={1,0,-1}', remove_first)
 
         # summary accuracy (std)
-        plot.history(ax[5], self.history['auroc-std'], ':', 'royalblue', 'std(AUROC), Z={1,0,-1}', remove_first)
+        plot.history(ax[5], self.history['auroc-std'], ':', 'red', 'std(AUROC), Z={1,0,-1}', remove_first)
 
         # KS metric
         plot.history(ax[6], self.history['KS1'], '-', 'darkred', 'KS (z=1, z=0)')
@@ -315,7 +315,7 @@ class TFEnvironment:
         # cosmetics
         for i in range(len(ax)):
             ax[i].legend(loc='best')
-        ax[4].set_xlabel('Training steps')
+        ax[7].set_xlabel('Training steps')
 
 
 def bootcamp(N, generate_toys, clf_settings, adv_settings, opt_settings, trn_settings):

@@ -20,17 +20,20 @@ develop-eggs/
 dist/
 downloads/
 eggs/
+bin/
 .eggs/
 lib/
 lib64/
 parts/
 sdist/
+*pyvenv.cfg
 var/
 wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 MANIFEST
+share/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
