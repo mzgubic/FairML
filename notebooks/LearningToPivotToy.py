@@ -92,8 +92,6 @@ plotting.plot_classifier_performance(test_data, 'classifier')
 # 
 # Train adversarially against GaussMix adversary (same as pivoting paper).
 
-# In[6]:
-
 n_samples = 10000
 n_epochs = 30
 n_adv_cycles = 50
@@ -146,13 +144,6 @@ pred_1 = utils.sigmoid(sess.run(clf_output, feed_dict={x_in:X_1, y_in:Y_1}))
 test_data['preds'] = pred, pred1, pred0, pred_1
 plotting.plot_classifier_performance(test_data, 'classifier_GaussMixAdv')
 
-
-# # Adversarial training (MINE)
-# 
-# Train adversarially against MINE adversary.
-
-# In[7]:
-
 n_samples = 10000
 n_epochs = 30
 n_adv_cycles = 50
@@ -204,14 +195,4 @@ pred0 = utils.sigmoid(sess.run(clf_output, feed_dict={x_in:X0, y_in:Y0}))
 pred_1 = utils.sigmoid(sess.run(clf_output, feed_dict={x_in:X_1, y_in:Y_1}))
 test_data['preds'] = pred, pred1, pred0, pred_1
 plotting.plot_classifier_performance(test_data, 'classifier_MINE')
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
 
