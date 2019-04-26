@@ -100,7 +100,7 @@ n_adv_cycles = 50
 n_components = 5
 n_clf = 1
 n_adv = 5
-lam = 50
+lam = 140
 ctr+=1
 name = 'name'+str(ctr)
     
@@ -159,7 +159,7 @@ n_adv_cycles = 50
 n_components = 5
 n_clf = 1
 n_adv = 5
-lam = 50
+lam = 140
 ctr+=1
 name = 'name'+str(ctr)
 
