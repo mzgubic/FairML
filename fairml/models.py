@@ -14,10 +14,35 @@ class Model:
 
 class Classifier(Model):
 
-    def __init__(self, name, depth=2, width=20, n_classes=2):
+    def __init__(self, name, depth=2, width=20):
 
         super().__init__(name, depth, width)
         self.n_classes = 2
+
+    @classmethod
+    def create(cls, name, clf_settings):
+        
+        clf_type = clf_settings['type']
+        
+        classes = {'Linear':LinearClassifier,
+                   'DNN':DNNClassifier}
+        
+        # check if implemented
+        if clf_type not in classes:
+            raise ValueError('Unknown Classifier type {}.'.format(clf_type))
+        
+        # return the right one
+        classifier = classes[clf_type]
+        kwargs = clf_settings.copy()
+        kwargs.pop('type')
+        return classifier(name='{}_{}_clf'.format(name, clf_type), **kwargs)
+
+
+class DNNClassifier(Classifier):
+
+    def __init__(self, name, depth, width):
+
+        super().__init__(name, depth, width)
 
     def build_forward(self, x_in):
 
@@ -47,6 +72,13 @@ class Classifier(Model):
         self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=one_hot, logits=self.logits))
         
 
+class LinearClassifier(DNNClassifier):
+
+    def __init__(self, name, **kwargs):
+
+        super().__init__(name, 0, 0)
+
+
 class Adversary(Model):
     
     def __init__(self, name, depth=2, width=20):
@@ -58,7 +90,7 @@ class Adversary(Model):
     @classmethod
     def create(cls, name, adv_settings):
         
-        adv_type = adv_settings['adv_type']
+        adv_type = adv_settings['type']
         
         classes = {'Dummy':DummyAdversary,
                    'GMM':GMMAdversary,
@@ -72,7 +104,7 @@ class Adversary(Model):
         # return the right one
         adversary = classes[adv_type]
         kwargs = adv_settings.copy()
-        kwargs.pop('adv_type')
+        kwargs.pop('type')
         return adversary(name='{}_{}_adv'.format(name, adv_type), **kwargs)
 
 

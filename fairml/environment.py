@@ -49,7 +49,7 @@ class TFEnvironment:
             self._in[xyz] = tf.placeholder(tftype, shape=(None, batch[xyz].shape[1]), name='{}_in'.format(xyz))
 
         # build the classifier graph
-        self.clf = models.Classifier(name=self.name+'_clf', **clf_settings)
+        self.clf = models.Classifier.create(self.name, clf_settings)
         self.clf.build_forward(self._in['X'])
 
         # build the adversary graph
