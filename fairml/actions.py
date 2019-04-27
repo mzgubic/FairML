@@ -68,4 +68,4 @@ def train_adversarially(sess, losses, opts, inputs, generate, n_samples, n_adv_c
         ax[2].legend(loc='best')
         ax[2].set_xlabel('Adversarial cycles')
         ax[0].set_title('Losses for {} Adversary'.format(text))
-        plt.show()
+        plt.savefig("training.pdf")

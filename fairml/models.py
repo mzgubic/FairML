@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+import tensorflow_probability as tfp
 import tensorflow.contrib.layers as layers
 
 
@@ -44,6 +45,18 @@ def MINE_loss(T_xy, T_x_y):
     return loss
 
 
+def classifier_pred(sess, clf_output, x_in, X, pred_size = 256):
+
+    datlen = len(X)
+    chunks = np.split(X, datlen / pred_size, axis = 0)
+    
+    retvals = []
+    for chunk in chunks:
+        retval_cur = sess.run(clf_output, feed_dict = {x_in: chunk})
+        retvals.append(retval_cur)
+
+    return np.concatenate(retvals, axis = 0)
+
 def classifier(x_in, name):
     
     with tf.variable_scope(name):
@@ -57,6 +70,28 @@ def classifier(x_in, name):
     
     return output, these_vars
 
+def randomized_classifier(x_in, name, num_components = 5):
+    with tf.variable_scope(name):
+        dense1 = layers.relu(x_in, 20)
+        dense2 = layers.relu(dense1, 20)
+        pre_output = layers.linear(dense2, 3 * num_components)
+
+        mu_val = pre_output[:,:num_components]
+        sigma_val = tf.exp(pre_output[:,num_components:2*num_components])
+        frac_val = tf.nn.softmax(pre_output[:,2*num_components:3*num_components])
+        
+        dists = [tfp.distributions.Normal(loc = mu_val[:,i], scale = sigma_val[:,i]) for i in range(num_components)]
+        mixing = tfp.distributions.Categorical(probs = frac_val)
+        mixed = tfp.distributions.Mixture(cat = mixing, components = dists)
+
+        sample = mixed.sample(1)
+        sample = tf.transpose(sample, [1, 0])
+
+        normsample = tf.math.sigmoid(sample)
+        #outputs = tf.concat([normsample, 1 - normsample], axis = 1)
+
+    these_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope = name)
+    return normsample, these_vars
 
 def classifier_loss(clf_output, y_in):
     

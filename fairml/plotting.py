@@ -24,19 +24,32 @@ def plot_classifier_performance(data, pname, batch=True):
     lim = 3
     
     # plot the variates
-    N = 300
-    ax[0,0].scatter(X[Y==0,0], X[Y==0,1], marker='o', color='k', alpha=0.2, label='Y=0')
-    ax[0,0].scatter(X1[Y1==1,0][:N], X1[Y1==1,1][:N], marker='x', c='darkred', alpha=1, label='Y=1, Z=1')
-    ax[0,0].scatter(X0[Y0==1,0][:N], X0[Y0==1,1][:N], marker='x', c='red', alpha=1, label='Y=1, Z=0')
-    ax[0,0].scatter(X_1[Y_1==1,0][:N], X_1[Y_1==1,1][:N], marker='x', c='tomato', alpha=1, label='Y=1, Z=-1')
-    ax[0,0].set_ylim(-lim, lim)
-    ax[0,0].set_xlim(-lim, lim)
-    ax[0,0].set_xlabel('x1')
-    ax[0,0].set_ylabel('x2')
-    ax[0,0].set_title('Variates')
-    leg = ax[0,0].legend(loc='best')
+    ax[0,0].hist(X[Y==0], color = 'gray', histtype = 'step', label = "bkg", density = True)
+    ax[0,0].hist(X1[Y1==1], color = 'darkred', histtype = 'step', label = "Z=1", density = True)
+    ax[0,0].hist(X0[Y0==1], color = 'red', histtype = 'step', label = "Z=0", density = True)
+    ax[0,0].hist(X_1[Y_1==1], color = 'tomato', histtype = 'step', label = "Z=-1", density = True)
+    ax[0,0].set_title('input feature')
+    ax[0,0].set_xlabel('x')
+    ax[0,0].set_ylabel('a.u.')
+    ax[0,0].legend(loc='best')
 
+    # plot classifier output distribution
+    pred_single, pred_single1, pred_single0, pred_single_1 = data['preds_single']
+    ax[0,1].hist(pred_single, color = 'gray', histtype = 'step', label = "p(Y|X=-0.2)", density = True)
+    ax[0,1].hist(pred_single1, color = 'tomato', histtype = 'step', label = "p(Y|X=-0.166)", density = True)
+    ax[0,1].hist(pred_single0, color = 'red', histtype = 'step', label = "p(Y|X=0.5)", density = True)
+    ax[0,1].hist(pred_single_1, color = 'darkred', histtype = 'step', label = "p(Y|X=0.8333)", density = True)
+    ax[0,1].set_title('randomized classifier output')
+    ax[0,1].set_xlabel('Y')
+    ax[0,1].set_ylabel('a.u.')
+    ax[0,1].legend(loc='best')
+    
+    
     # plot the ROC curves for Z={-1,0,1}
+    print(Z0)
+    print("truth = {}".format(Y1[Z0==0]))
+    print("pred = {}".format(pred1[Z0==0].flatten()))
+    
     fpr1, tpr1, _ = roc_curve(Y1[Z1==1], pred1[Z1==1])
     fpr0, tpr0, _ = roc_curve(Y0[Z0==0], pred0[Z0==0])
     fpr_1, tpr_1, _ = roc_curve(Y_1[Z_1==-1], pred_1[Z_1==-1])
@@ -53,19 +66,19 @@ def plot_classifier_performance(data, pname, batch=True):
     ax[1,1].hist(pred1, bins=bins, density=True, color='darkred', histtype='step', label='Z=1')
     ax[1,1].hist(pred0, bins=bins, density=True, color='red', histtype='step', label='Z=0')
     ax[1,1].hist(pred_1, bins=bins, density=True, color='tomato', histtype='step', label='Z=-1')
-    ax[1,1].set_xlabel('classifier output f(X|Z=z)')
+    ax[1,1].set_xlabel('classifier output p(Y|Z=z)')
     ax[1,1].set_ylabel('a.u.')
     ax[1,1].legend(loc='best')
     ax[1,1].set_title('Classifier output')
     
     # plot the decision boundary
-    dec = ax[0,1].tricontourf(X[:,0], X[:,1], pred.ravel(), 20)
-    ax[0,1].set_ylim(-lim, lim)
-    ax[0,1].set_xlim(-lim, lim)
-    ax[0,1].set_title('Decision boundary')
-    ax[0,1].set_xlabel('x1')
-    ax[0,1].set_ylabel('x2')
-    plt.colorbar(dec, ax=ax[0,1])
+    # dec = ax[0,1].tricontourf(X[:,0], X[:,1], pred.ravel(), 20)
+    # ax[0,1].set_ylim(-lim, lim)
+    # ax[0,1].set_xlim(-lim, lim)
+    # ax[0,1].set_title('Decision boundary')
+    # ax[0,1].set_xlabel('x1')
+    # ax[0,1].set_ylabel('x2')
+    # plt.colorbar(dec, ax=ax[0,1])
 
     plt.savefig(pname)
     if not batch:
@@ -190,7 +203,7 @@ def plot_MI(MINEs, MIs, n_adv_cycles, pname, batch=True):
     plt.close(fig)
 
 
-def plot_toy_variates(X, Y, Z):
+def plot_toy_variates(X, Y, Z, outfile):
     
     # prepare
     n_samples = X.shape[0]
@@ -199,40 +212,44 @@ def plot_toy_variates(X, Y, Z):
     plot_min, plot_max = -5, 5
     bandwidth = 0.2
     
-    # gaussian KDE
-    x1_plot = np.linspace(plot_min, plot_max, 100)
-    x1_kde = KernelDensity(kernel='gaussian', bandwidth=bandwidth)
-    px1_log = {}
-    px1_log['y==0'] = x1_kde.fit(X0[:,0].reshape(-1,1)).score_samples(x1_plot.reshape(-1,1))
-    px1_log['y==1'] = x1_kde.fit(X1[:,0].reshape(-1,1)).score_samples(x1_plot.reshape(-1,1))
+    # # gaussian KDE
+    # x1_plot = np.linspace(plot_min, plot_max, 100)
+    # x1_kde = KernelDensity(kernel='gaussian', bandwidth=bandwidth)
+    # px1_log = {}
+    # px1_log['y==0'] = x1_kde.fit(X0[:,0].reshape(-1,1)).score_samples(x1_plot.reshape(-1,1))
+    # px1_log['y==1'] = x1_kde.fit(X1[:,0].reshape(-1,1)).score_samples(x1_plot.reshape(-1,1))
     
-    # gaussian KDE
-    x2_kde = KernelDensity(kernel='gaussian', bandwidth=bandwidth)
-    px2_log = {}
-    px2_log['y==0'] = x2_kde.fit(X0[:,1].reshape(-1,1)).score_samples(x1_plot.reshape(-1,1))
-    px2_log['y==1'] = x2_kde.fit(X1[:,1].reshape(-1,1)).score_samples(x1_plot.reshape(-1,1))
+    # # gaussian KDE
+    # x2_kde = KernelDensity(kernel='gaussian', bandwidth=bandwidth)
+    # px2_log = {}
+    # px2_log['y==0'] = x2_kde.fit(X0[:,1].reshape(-1,1)).score_samples(x1_plot.reshape(-1,1))
+    # px2_log['y==1'] = x2_kde.fit(X1[:,1].reshape(-1,1)).score_samples(x1_plot.reshape(-1,1))
     
     # main
-    fig, ax = plt.subplots(2, 2, figsize=(7,7), gridspec_kw={'height_ratios':[1,4], 'width_ratios':[4,1]}, sharex='col', sharey='row')
-    ax[1,0].scatter(X[Y==0,0], X[Y==0,1], marker='o', color='k', alpha=0.2, label='Y=0')
-    ax[1,0].scatter(X[Y==1,0], X[Y==1,1], marker='x', c=Z[n_samples//2:], alpha=0.4, cmap='Reds', label='Y=1')
+    fig, ax = plt.subplots(1, 1, figsize=(7,7))
+    ax.hist(X[Y==0], color = 'k')
+    ax.hist(X[Y==1])
+
+    # ax[1,0].scatter(X[Y==0,0], X[Y==0,1], marker='o', color='k', alpha=0.2, label='Y=0')
+    # ax[1,0].scatter(X[Y==1,0], X[Y==1,1], marker='x', c=Z[n_samples//2:], alpha=0.4, cmap='Reds', label='Y=1')
     
-    # top
-    ax[0,0].plot(x1_plot, np.exp(px1_log['y==0']), color='k')
-    ax[0,0].plot(x1_plot, np.exp(px1_log['y==1']), color='r')
+    # # top
+    # ax[0,0].plot(x1_plot, np.exp(px1_log['y==0']), color='k')
+    # ax[0,0].plot(x1_plot, np.exp(px1_log['y==1']), color='r')
     
-    # right
-    ax[1,1].plot(np.exp(px2_log['y==0']), x1_plot, color='k')
-    ax[1,1].plot(np.exp(px2_log['y==1']), x1_plot, color='r')
+    # # right
+    # ax[1,1].plot(np.exp(px2_log['y==0']), x1_plot, color='k')
+    # ax[1,1].plot(np.exp(px2_log['y==1']), x1_plot, color='r')
     
     # cosmetics
-    ax[1,0].set_ylim(plot_min, plot_max)
-    ax[1,0].set_xlim(plot_min, plot_max)
-    ax[1,0].set_xlabel('x1')
-    ax[1,0].set_ylabel('x2')
-    leg = ax[1,0].legend(loc='best')
-    leg.legendHandles[1].set_color('red')
+    # ax[1,0].set_ylim(plot_min, plot_max)
+    # ax[1,0].set_xlim(plot_min, plot_max)
+    # ax[1,0].set_xlabel('x1')
+    # ax[1,0].set_ylabel('x2')
+    # leg = ax[1,0].legend(loc='best')
+    # leg.legendHandles[1].set_color('red')
     
     # empty axes
-    fig.delaxes(ax[0,1])
-    fig.show()
+    #fig.delaxes(ax[0,1])
+    #fig.show()
+    fig.savefig(outfile)

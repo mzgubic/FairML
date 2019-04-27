@@ -2,26 +2,46 @@ import numpy as np
 
 def generate_toys(n_samples, z=None):
 
-    # Y
-    Y = np.zeros(n_samples)
-    Y[n_samples//2:] = 1
+    X = []
+    Y = []
+    Z = []
+    
+    for samp in range(n_samples):
+        if z is None:
+            # play a small trick here: train on a slightly larger range of the sensitive
+            # parameter than what is used later for evaluation (use -1, 0, 1)
+            z_cur = np.random.uniform(low = -1.1, high = 1.1, size = 1)[0]
+        else:
+            z_cur = z
+        Z.append(z_cur)
+        
+        if np.random.rand() > 0.5:
+            x = np.random.normal(-0.2, 0.5, size = 1)[0]
+            y = 0
+            X.append(x)
+            Y.append(y)
+        else:
+            # map from z = (-1, 1) to nu = (0 + eps, 1 - eps)
+            nu = z_cur / 3.0 + 0.5
+            mu = 0.5 + nu
+            var = 0.5 * (1 - nu)
+            x = np.random.normal(mu, var, size = 1)[0]
+            y = 1
+            X.append(x)
+            Y.append(y)
 
-    # Z
-    if z == None:
-        #Z = np.random.normal(0, 1, size=n_samples)
-        #Z = np.random.exponential(scale = 0.5, size = n_samples) - 2
-        #Z = np.random.uniform(low = -2, high = 2, size = n_samples)
-        Z = np.random.choice([-2, 0, 2], p = [0.33, 0.33, 0.34], size = n_samples)
-        #Z = np.random.choice([-2, 0, 2], p = [0.5, 0.5], size = n_samples)
-    else:
-        Z = z * np.ones(n_samples)
+    X = np.array(X)
+    Y = np.array(Y)
+    Z = np.array(Z)
 
-    # X
-    X0 = np.random.multivariate_normal([0, 0], [[1, -0.5],[-0.5, 1]], size=n_samples//2)
-    X1 = np.random.multivariate_normal([1, 1], 0.5*np.eye(2), size=n_samples//2)
-    X1[:,1] += Z[n_samples//2:]
-    X = np.concatenate([X0, X1])
-
+    X = np.expand_dims(X, axis = 1)
+    #Y = np.expand_dims(Y, axis = 1)
+    #Z = np.expand_dims(Z, axis = 1)
+    
+    # print("dim(X) = {}".format(np.shape(X)))
+    # print("dim(Y) = {}".format(np.shape(Y)))
+    # print("dim(Z) = {}".format(np.shape(Z)))
+    
     return X, Y, Z
 
 def toys_single_Z_diff(n_samples, z=None):
