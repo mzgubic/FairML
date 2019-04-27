@@ -5,6 +5,11 @@
 *.gif
 *.DS_Store
 
+# write up
+*.aux
+*.out
+*.synctex.gz
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
