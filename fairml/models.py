@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import tensorflow.contrib.layers as layers
+from utils import sigmoid
 
 
 class Model:
@@ -95,6 +96,7 @@ class Adversary(Model):
         classes = {'Dummy':DummyAdversary,
                    'GMM':GMMAdversary,
                    'MINE':MINEAdversary,
+                   'JS':JSAdversary,
                    'PtEst':PtEstAdversary}
         
         # check if implemented
@@ -230,13 +232,14 @@ class GMMAdversary(Adversary):
         # make the loss
         nll = - tf.math.log(likelihood)
         self.loss = tf.reduce_mean(nll)
-        
+
 
 class MINEAdversary(Adversary):
     
-    def __init__(self, name, depth=2, width=10, **kwargs):
+    def __init__(self, name, depth=2, width=10, isJS=False, **kwargs):
         
         super().__init__(name, depth, width, **kwargs)
+        self.isJS = isJS
         
         for kw in kwargs:
             setattr(self, kw, kwargs[kw])
@@ -276,11 +279,33 @@ class MINEAdversary(Adversary):
             T_xy = output[:N_batch]
             T_x_y = output[N_batch:]
 
-            # compute the loss
-            #self.loss = - (tf.reduce_mean(T_xy, axis=0) - tf.math.log(tf.reduce_mean(tf.math.exp(T_x_y), axis=0)))
-            self.loss = - (tf.reduce_mean(T_xy) - tf.math.log(tf.reduce_mean(tf.math.exp(T_x_y))))
+            # compute the loss 
+            # f-div for JS
+            if self.isJS:
+                self.loss = - (tf.reduce_mean(tf.math.log(sigmoid(T_xy))) + tf.reduce_mean(tf.math.log(1. - sigmoid(T_x_y))))
+
+            # Donsker-Varadhan for KL
+            else:
+                self.loss = - (tf.reduce_mean(T_xy) - tf.math.log(tf.reduce_mean(tf.math.exp(T_x_y))))
 
         # save variables
         self.tf_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.name)
+
+
+class JSAdversary(Adversary):
+
+    def __init__(self, name, depth=2, width=10, **kwargs):
+
+        super().__init__(name, depth, width, **kwargs)
+        self.model = MINEAdversary(name, depth, width, isJS=True, **kwargs)
+
+        for kw in kwargs:
+            setattr(self, kw, kwargs[kw])
+
+    def build_loss(self, fX, Z):
+        
+        self.model.build_loss(fX, Z)
+        self.loss = self.model.loss
+        self.tf_vars = self.model.tf_vars
 
 
