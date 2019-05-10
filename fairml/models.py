@@ -82,11 +82,14 @@ class LinearClassifier(DNNClassifier):
 
 class Adversary(Model):
     
-    def __init__(self, name, depth=2, width=20):
+    def __init__(self, name, depth=2, width=20, **kwargs):
         
         super().__init__(name, depth, width)
         self.loss = None
         self.tf_vars = None
+        
+        for kw in kwargs:
+            setattr(self, kw, kwargs[kw])
     
     @classmethod
     def create(cls, name, adv_settings):
@@ -115,8 +118,6 @@ class PtEstAdversary(Adversary):
     def __init__(self, name, depth=2, width=20, **kwargs):
 
         super().__init__(name, depth, width, **kwargs)
-        for kw in kwargs:
-            setattr(self, kw, kwargs[kw])
 
     def build_loss(self, fX, Z):
 
@@ -164,8 +165,6 @@ class GMMAdversary(Adversary):
         
         self.nll_pars = None
         self.n_components = n_components
-        for kw in kwargs:
-            setattr(self, kw, kwargs[kw])
     
     def build_loss(self, fX, Z):
 
@@ -240,9 +239,6 @@ class MINEAdversary(Adversary):
         
         super().__init__(name, depth, width, **kwargs)
         self.isJS = isJS
-        
-        for kw in kwargs:
-            setattr(self, kw, kwargs[kw])
             
     def build_loss(self, fX, Z):
 
@@ -298,9 +294,6 @@ class JSAdversary(Adversary):
 
         super().__init__(name, depth, width, **kwargs)
         self.model = MINEAdversary(name, depth, width, isJS=True, **kwargs)
-
-        for kw in kwargs:
-            setattr(self, kw, kwargs[kw])
 
     def build_loss(self, fX, Z):
         
