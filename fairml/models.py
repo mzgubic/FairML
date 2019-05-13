@@ -99,6 +99,7 @@ class Adversary(Model):
         classes = {'Dummy':DummyAdversary,
                    'GMM':GMMAdversary,
                    'MINE':MINEAdversary,
+                   'MINEf':MINEAdversary,
                    'JS':JSAdversary,
                    'PtEst':PtEstAdversary}
         
@@ -233,16 +234,11 @@ class GMMAdversary(Adversary):
         self.loss = tf.reduce_mean(nll)
 
 
-class MINEAdversary(Adversary):
+class VariationalAdversary(Adversary):
     
-    def __init__(self, name, depth=2, width=10, isJS=False, **kwargs):
-        
-        super().__init__(name, depth, width, **kwargs)
-        self.isJS = isJS
-            
-    def build_loss(self, fX, Z):
+    def build_Ts(self, fX, Z):
 
-        print('--- Building MINE loss')
+        print('--- Building Ts')
         
         # store the input placeholders
         fX = tf.reshape(fX, shape=(-1, 1))
@@ -272,33 +268,44 @@ class MINEAdversary(Adversary):
 
             # split in T_xy and T_x_y
             N_batch = tf.shape(x_in)[0]
-            T_xy = output[:N_batch]
-            T_x_y = output[N_batch:]
-
-            # compute the loss 
-            # f-div for JS
-            if self.isJS:
-                self.loss = - (tf.reduce_mean(tf.math.log(sigmoid(T_xy))) + tf.reduce_mean(tf.math.log(1. - sigmoid(T_x_y))))
-
-            # Donsker-Varadhan for KL
-            else:
-                self.loss = - (tf.reduce_mean(T_xy) - tf.math.log(tf.reduce_mean(tf.math.exp(T_x_y))))
+            self.T_xy = output[:N_batch]
+            self.T_x_y = output[N_batch:]
 
         # save variables
         self.tf_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.name)
 
 
-class JSAdversary(Adversary):
+class MINEfAdversary(VariationalAdversary):
 
-    def __init__(self, name, depth=2, width=10, **kwargs):
+    def build_loss(self, fX, Z):
 
-        super().__init__(name, depth, width, **kwargs)
-        self.model = MINEAdversary(name, depth, width, isJS=True, **kwargs)
+        # build Ts
+        self.build_Ts(fX, Z)
+
+        # f-div 
+        self.loss = - (tf.reduce_mean(self.T_xy) - tf.reduce_mean(tf.math.exp(self.T_x_y - 1.)))
+
+
+class MINEAdversary(VariationalAdversary):
+
+    def build_loss(self, fX, Z):
+
+        # build Ts
+        self.build_Ts(fX, Z)
+
+        # Donsker-Varadhan for KL (1801.04062)
+        self.loss = - (tf.reduce_mean(self.T_xy) - tf.math.log(tf.reduce_mean(tf.math.exp(self.T_x_y))))
+
+
+class JSAdversary(VariationalAdversary):
 
     def build_loss(self, fX, Z):
         
-        self.model.build_loss(fX, Z)
-        self.loss = self.model.loss
-        self.tf_vars = self.model.tf_vars
+        # build Ts
+        self.build_Ts(fX, Z)
+
+        # f-div for JS
+        self.loss = - (tf.reduce_mean(tf.math.log(sigmoid(self.T_xy))) + tf.reduce_mean(tf.math.log(1. - sigmoid(self.T_x_y))))
+
 
 
